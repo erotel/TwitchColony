@@ -1,9 +1,12 @@
+using System.Reflection;
+using HarmonyLib;
 using UnityEngine;
 
 namespace TwitchColony.Events
 {
-    // "Order completion" events — instantly finish player-queued work. Vanilla API only:
-    // Workable.InstantlyFinish (inherited by Constructable/Diggable) and Research.GetActiveResearch.
+    // "Order completion" events — instantly finish player-queued work. Constructable.FinishConstruction
+    // (private, invoked directly) and WorldDamage for digging: both avoid needing a live worker, which
+    // is what made the earlier InstantlyFinish(null) approach throw a NullReferenceException.
 
     /// <summary>
     ///     Instantly finish every planned building whose required materials are actually available in
@@ -16,9 +19,20 @@ namespace TwitchColony.Events
         public override string Id => "complete_buildings";
         public override string DisplayName => "Instant build (if material available)";
 
+        // Constructable.FinishConstruction(UtilityConnections, WorkerBase) is private; invoke it with
+        // nulls to complete the build without a worker (workerForGameplayEvent is only for xp/events).
+        private static readonly MethodInfo FinishConstruction =
+            AccessTools.DeclaredMethod(typeof(Constructable), "FinishConstruction");
+
         public override void Trigger()
         {
             Log.Info("Event: CompleteBuildings");
+            if (FinishConstruction == null)
+            {
+                Log.Warn("CompleteBuildings: FinishConstruction method not found.");
+                return;
+            }
+
             var all = Object.FindObjectsOfType<Constructable>();
             int done = 0, skipped = 0;
             foreach (var c in all)
@@ -45,7 +59,7 @@ namespace TwitchColony.Events
                         continue;
                     }
 
-                    c.InstantlyFinish(null);
+                    FinishConstruction.Invoke(c, new object[] { null, null });
                     done++;
                 }
                 catch (System.Exception e)
@@ -67,6 +81,12 @@ namespace TwitchColony.Events
         public override void Trigger()
         {
             Log.Info("Event: CompleteDigging");
+            if (WorldDamage.Instance == null)
+            {
+                Log.Warn("CompleteDigging: no WorldDamage instance.");
+                return;
+            }
+
             var all = Object.FindObjectsOfType<Diggable>();
             var done = 0;
             foreach (var d in all)
@@ -78,7 +98,14 @@ namespace TwitchColony.Events
 
                 try
                 {
-                    d.InstantlyFinish(null);
+                    var cell = d.GetCell();
+                    if (!Grid.IsValidCell(cell) || !Grid.Solid[cell])
+                    {
+                        continue;
+                    }
+
+                    // Big damage value fully mines the natural tile and drops its resources.
+                    WorldDamage.Instance.ApplyDamage(cell, 10000f, cell, "TwitchColony", null);
                     done++;
                 }
                 catch (System.Exception e)
