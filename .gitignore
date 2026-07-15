@@ -1,0 +1,12 @@
+# Build output
+bin/
+obj/
+dist/
+
+# Game reference DLLs — copied per-machine from the ONI install, never committed (Klei's files)
+/lib/
+
+# IDE
+.idea/
+.vs/
+*.user
