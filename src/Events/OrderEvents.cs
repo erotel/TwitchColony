@@ -59,6 +59,10 @@ namespace TwitchColony.Events
                         continue;
                     }
 
+                    // Put the chosen materials into the build storage at a sane temperature first —
+                    // otherwise FinishConstruction builds from empty storage and the game errors on a
+                    // 0 K building ("temperature of zero which has always been an error").
+                    SeedBuildMaterials(c, building.Def, cell);
                     FinishConstruction.Invoke(c, new object[] { null, null });
                     done++;
                 }
@@ -69,6 +73,34 @@ namespace TwitchColony.Events
             }
 
             Log.Info($"CompleteBuildings: finished {done}, skipped {skipped} (no material).");
+        }
+
+        /// <summary>
+        ///     Fill the constructable's build storage with its selected materials (at ambient/room
+        ///     temperature) so FinishConstruction produces a building with a valid temperature.
+        /// </summary>
+        private static void SeedBuildMaterials(Constructable c, BuildingDef def, int cell)
+        {
+            var storage = Traverse.Create(c).Field<Storage>("storage").Value;
+            var tags = c.SelectedElementsTags;
+            if (storage == null || tags == null)
+            {
+                return;
+            }
+
+            var temp = Grid.IsValidCell(cell) && Grid.Temperature[cell] > 1f ? Grid.Temperature[cell] : 293.15f;
+            var masses = def.Mass;
+            for (var i = 0; i < tags.Count; i++)
+            {
+                var mass = masses != null && i < masses.Length ? masses[i] : 100f;
+                var el = ElementLoader.GetElement(tags[i]);
+                if (el == null || mass <= 0f)
+                {
+                    continue;
+                }
+
+                storage.AddOre(el.id, mass, temp, byte.MaxValue, 0, false, false);
+            }
         }
     }
 
