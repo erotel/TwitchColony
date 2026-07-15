@@ -10,3 +10,6 @@ dist/
 .idea/
 .vs/
 *.user
+
+# Local Claude Code context (not part of the mod)
+CLAUDE.md
