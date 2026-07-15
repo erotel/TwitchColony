@@ -63,6 +63,13 @@ namespace TwitchColony
             private static void Postfix(PauseScreen __instance, ref IList<KButtonMenu.ButtonInfo> ___buttons)
             {
                 var buttons = ___buttons.ToList();
+
+                // ConfigureButtonInfos runs every time the menu is rebuilt; don't add our button twice.
+                if (buttons.Contains(TwitchButtonInfo))
+                {
+                    return;
+                }
+
                 var idx = System.Math.Min(4, buttons.Count); // sit near the top, but never past the end
                 buttons.Insert(idx, TwitchButtonInfo);
                 __instance.SetButtons(buttons);
