@@ -38,6 +38,41 @@ namespace TwitchColony.Voting
         public float VoteTimeRemaining { get; private set; }
         public float VoteDelayRemaining { get; private set; }
 
+        /// <summary>The events currently being voted on (empty when idle). For the on-screen HUD.</summary>
+        public IReadOnlyList<GameEvent> CurrentOptions => options;
+
+        /// <summary>Name of the most recently triggered winning event (for the HUD banner).</summary>
+        public string LastWinnerName { get; private set; }
+
+        /// <summary>Unscaled time when the last winner was announced.</summary>
+        public float LastWinnerAt { get; private set; }
+
+        private void AnnounceWinner(GameEvent ev)
+        {
+            if (ev == null)
+            {
+                return;
+            }
+
+            LastWinnerName = ev.DisplayName;
+            LastWinnerAt = Time.unscaledTime;
+        }
+
+        /// <summary>Current chat-vote counts per option; index matches <see cref="CurrentOptions"/>.</summary>
+        public int[] CurrentChatTally()
+        {
+            var tally = new int[options.Count];
+            foreach (var kv in chatVotes)
+            {
+                if (kv.Value >= 0 && kv.Value < tally.Length)
+                {
+                    tally[kv.Value]++;
+                }
+            }
+
+            return tally;
+        }
+
         private List<GameEvent> options = new List<GameEvent>();
 
         // Chat-vote state: user -> chosen option index (last vote wins).
@@ -218,6 +253,7 @@ namespace TwitchColony.Voting
             }
 
             Log.Info($"Chat winner: {options[best].DisplayName} ({tally[best]} votes)");
+            AnnounceWinner(options[best]);
             TriggerSafely(options[best]);
         }
 
@@ -282,6 +318,7 @@ namespace TwitchColony.Voting
                     if (poll == null || poll.Choices.Count == 0)
                     {
                         Log.Warn("Poll returned no results; picking first option.");
+                        AnnounceWinner(captured[0]);
                         TriggerSafely(captured[0]);
                         return;
                     }
@@ -296,6 +333,7 @@ namespace TwitchColony.Voting
                     }
 
                     Log.Info($"Poll winner: {captured[best].DisplayName} ({poll.Choices[best].Votes} votes)");
+                    AnnounceWinner(captured[best]);
                     TriggerSafely(captured[best]);
                 });
             }) { IsBackground = true };

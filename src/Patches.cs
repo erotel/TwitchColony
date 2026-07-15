@@ -23,6 +23,7 @@ namespace TwitchColony
             MainThread.Ensure();
             EventRegistry.RegisterDefaults();
             VoteController.Ensure();
+            VoteHud.Ensure();
 
             var cfg = ModConfig.Instance;
 
