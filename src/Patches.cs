@@ -20,6 +20,14 @@ namespace TwitchColony
         // ReSharper disable once UnusedMember.Local
         private static void Postfix()
         {
+            // Guard against Game.OnSpawn running twice: only one runtime + IRC client per colony,
+            // otherwise two clients log in with the same nick and fight over the connection.
+            if (client != null)
+            {
+                Log.Warn("Runtime already started; ignoring duplicate OnSpawn.");
+                return;
+            }
+
             MainThread.Ensure();
             EventRegistry.RegisterDefaults();
             VoteController.Ensure();
