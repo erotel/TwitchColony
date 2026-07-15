@@ -9,7 +9,8 @@ namespace TwitchColony.UI
 {
     /// <summary>
     ///     Shows chat messages as speech bubbles floating above the duplicant whose name matches the
-    ///     chatter's Twitch nick. Independent implementation. Must be called on the main thread.
+    ///     chatter's Twitch nick. At most one bubble per duplicant — a new message refreshes it rather
+    ///     than stacking. Independent implementation. Must be called on the main thread.
     /// </summary>
     public static class SpeechBubbles
     {
@@ -18,7 +19,13 @@ namespace TwitchColony.UI
         private static Canvas canvas;
         private static readonly Dictionary<string, float> LastShownByUser = new Dictionary<string, float>();
 
-        /// <summary>Try to show a bubble for a chat message. Returns true if a bubble was created.</summary>
+        // One live bubble per target transform (so repeat messages refresh instead of stacking).
+        private static readonly Dictionary<Transform, BubbleFollow> Active = new Dictionary<Transform, BubbleFollow>();
+
+        private static readonly Dictionary<string, TMP_FontAsset> FontCache = new Dictionary<string, TMP_FontAsset>();
+        private static bool loggedFonts;
+
+        /// <summary>Try to show a bubble for a chat message. Returns true if a bubble was shown.</summary>
         public static bool TryShow(string user, string text)
         {
             var cfg = ModConfig.Instance;
@@ -38,6 +45,8 @@ namespace TwitchColony.UI
                 text = text.Substring(cfg.BubblePrefix.Length).TrimStart();
             }
 
+            // Chat text is untrusted: strip formatting so a chatter can't inject <size>/<color> markup.
+            text = Util.StripTextFormatting(text ?? "").Trim();
             if (string.IsNullOrEmpty(text))
             {
                 return false;
@@ -68,7 +77,7 @@ namespace TwitchColony.UI
 
         /// <summary>
         ///     Show a bubble on a specific transform, bypassing prefix/cooldown (used by events).
-        ///     Returns the created bubble GameObject (or null) so callers can replace/destroy it.
+        ///     Returns the bubble GameObject (or null) so callers can replace/destroy it.
         /// </summary>
         public static GameObject ShowRaw(Transform target, string text)
         {
@@ -117,19 +126,78 @@ namespace TwitchColony.UI
             canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 30000;
-            go.AddComponent<CanvasScaler>();
+
+            // Scale with resolution so bubbles are a consistent size across displays.
+            var scaler = go.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+
             go.AddComponent<GraphicRaycaster>();
+        }
+
+        /// <summary>Resolve a game TMP font by name; null => TMP default. Logs available names once if not found.</summary>
+        private static TMP_FontAsset ResolveFont(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                return null;
+            }
+
+            if (FontCache.TryGetValue(name, out var cached))
+            {
+                return cached;
+            }
+
+            TMP_FontAsset found = null;
+            foreach (var f in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
+            {
+                if (f != null && f.name == name)
+                {
+                    found = f;
+                    break;
+                }
+            }
+
+            if (found == null && !loggedFonts)
+            {
+                loggedFonts = true;
+                var names = new List<string>();
+                foreach (var f in Resources.FindObjectsOfTypeAll<TMP_FontAsset>())
+                {
+                    if (f != null)
+                    {
+                        names.Add(f.name);
+                    }
+                }
+
+                Log.Warn($"BubbleFont '{name}' not found. Available TMP fonts: {string.Join(", ", names.ToArray())}");
+            }
+
+            FontCache[name] = found;
+            return found;
         }
 
         private static GameObject Spawn(Transform target, string text, ModConfig cfg)
         {
             EnsureCanvas();
 
+            // Refresh the existing bubble for this target instead of stacking a new one.
+            if (Active.TryGetValue(target, out var existing) && existing != null)
+            {
+                existing.SetText(text);
+                return existing.gameObject;
+            }
+
             var panelGo = new GameObject("Bubble");
             panelGo.transform.SetParent(canvas.transform, false);
 
+            // Bottom-centre pivot so the bubble sits above the anchor point.
+            var prt = panelGo.GetComponent<RectTransform>() ?? panelGo.AddComponent<RectTransform>();
+            prt.pivot = new Vector2(0.5f, 0f);
+
             var img = panelGo.AddComponent<Image>();
             img.color = new Color(0f, 0f, 0f, 0.72f);
+            img.raycastTarget = false;
 
             var layout = panelGo.AddComponent<LayoutElement>();
             layout.preferredWidth = cfg.BubbleMaxWidth;
@@ -141,11 +209,18 @@ namespace TwitchColony.UI
             var textGo = new GameObject("Text");
             textGo.transform.SetParent(panelGo.transform, false);
             var tmp = textGo.AddComponent<TextMeshProUGUI>();
-            tmp.text = text;
+            var font = ResolveFont(cfg.BubbleFont);
+            if (font != null)
+            {
+                tmp.font = font;
+            }
+
             tmp.fontSize = cfg.BubbleFontSize;
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.enableWordWrapping = true;
+            tmp.raycastTarget = false;
+            tmp.richText = false; // never interpret markup from chat as rich text
 
             var textRect = tmp.rectTransform;
             textRect.anchorMin = Vector2.zero;
@@ -154,22 +229,40 @@ namespace TwitchColony.UI
             textRect.offsetMax = new Vector2(-6, -4);
 
             var follow = panelGo.AddComponent<BubbleFollow>();
-            follow.Init(target, cfg.BubbleSeconds);
+            follow.Init(target, cfg.BubbleSeconds, tmp);
+            follow.SetText(text);
+
+            Active[target] = follow;
             return panelGo;
         }
 
-        /// <summary>Makes a bubble track a world-space target and expire after a lifetime.</summary>
+        /// <summary>Makes a bubble track a world-space target, refresh its text, and expire after a lifetime.</summary>
         private sealed class BubbleFollow : MonoBehaviour
         {
             private Transform target;
+            private float lifetime;
             private float dieAt;
             private RectTransform rect;
+            private TextMeshProUGUI label;
 
-            public void Init(Transform followTarget, float seconds)
+            public void Init(Transform followTarget, float seconds, TextMeshProUGUI tmpLabel)
             {
                 target = followTarget;
+                lifetime = seconds;
                 dieAt = Time.unscaledTime + seconds;
                 rect = GetComponent<RectTransform>();
+                label = tmpLabel;
+            }
+
+            /// <summary>Set the displayed text and reset the expiry timer.</summary>
+            public void SetText(string text)
+            {
+                if (label != null)
+                {
+                    label.text = text;
+                }
+
+                dieAt = Time.unscaledTime + lifetime;
             }
 
             private void Update()
@@ -194,7 +287,15 @@ namespace TwitchColony.UI
                     return;
                 }
 
-                rect.position = screen;
+                rect.position = new Vector3(screen.x, screen.y, 0f);
+            }
+
+            private void OnDestroy()
+            {
+                if (target != null)
+                {
+                    Active.Remove(target);
+                }
             }
         }
     }
