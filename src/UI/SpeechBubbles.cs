@@ -66,15 +66,18 @@ namespace TwitchColony.UI
             return true;
         }
 
-        /// <summary>Show a bubble on a specific transform, bypassing prefix/cooldown (used by events).</summary>
-        public static void ShowRaw(Transform target, string text)
+        /// <summary>
+        ///     Show a bubble on a specific transform, bypassing prefix/cooldown (used by events).
+        ///     Returns the created bubble GameObject (or null) so callers can replace/destroy it.
+        /// </summary>
+        public static GameObject ShowRaw(Transform target, string text)
         {
             if (target == null || string.IsNullOrEmpty(text))
             {
-                return;
+                return null;
             }
 
-            Spawn(target, text, ModConfig.Instance);
+            return Spawn(target, text, ModConfig.Instance);
         }
 
         private static GameObject FindMinionByName(string user)
@@ -118,7 +121,7 @@ namespace TwitchColony.UI
             go.AddComponent<GraphicRaycaster>();
         }
 
-        private static void Spawn(Transform target, string text, ModConfig cfg)
+        private static GameObject Spawn(Transform target, string text, ModConfig cfg)
         {
             EnsureCanvas();
 
@@ -152,6 +155,7 @@ namespace TwitchColony.UI
 
             var follow = panelGo.AddComponent<BubbleFollow>();
             follow.Init(target, cfg.BubbleSeconds);
+            return panelGo;
         }
 
         /// <summary>Makes a bubble track a world-space target and expire after a lifetime.</summary>

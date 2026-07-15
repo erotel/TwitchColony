@@ -218,7 +218,20 @@ namespace TwitchColony.Voting
             }
 
             Log.Info($"Chat winner: {options[best].DisplayName} ({tally[best]} votes)");
-            options[best].Trigger();
+            TriggerSafely(options[best]);
+        }
+
+        /// <summary>Run an event's effect without letting a thrown exception stall the state machine.</summary>
+        private static void TriggerSafely(GameEvent ev)
+        {
+            try
+            {
+                ev.Trigger();
+            }
+            catch (System.Exception e)
+            {
+                Log.Warn($"Event '{ev.DisplayName}' threw: {e.Message}");
+            }
         }
 
         private void StartTwitchPoll(ModConfig cfg)
@@ -269,7 +282,7 @@ namespace TwitchColony.Voting
                     if (poll == null || poll.Choices.Count == 0)
                     {
                         Log.Warn("Poll returned no results; picking first option.");
-                        captured[0].Trigger();
+                        TriggerSafely(captured[0]);
                         return;
                     }
 
@@ -283,7 +296,7 @@ namespace TwitchColony.Voting
                     }
 
                     Log.Info($"Poll winner: {captured[best].DisplayName} ({poll.Choices[best].Votes} votes)");
-                    captured[best].Trigger();
+                    TriggerSafely(captured[best]);
                 });
             }) { IsBackground = true };
             thread.Start();
