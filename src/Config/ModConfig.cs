@@ -29,6 +29,7 @@ namespace TwitchColony.Config
         public bool EnableEvents = true;      // Master switch for the event/voting system.
         public bool UseTwitchPolls = false;   // Use native Twitch polls instead of counting chat votes.
         public int VotingSeconds = 60;        // Voting window length.
+        public float VoteDelay = 540f;        // Seconds between the end of one vote and the start of the next (auto-restart).
         public int OptionsPerVote = 3;        // How many events to offer (2-5 for polls).
         public string VoteCommandPrefix = "!vote"; // Chat-vote command, e.g. "!vote 2".
 

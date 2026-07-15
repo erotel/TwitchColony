@@ -11,8 +11,9 @@
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Deterministic>true</Deterministic>
-    <!-- net48 reference assemblies (needed to build on Linux, no Windows/.NET Framework install). -->
-    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <!-- Build on Linux (no Windows/.NET Framework install): the Microsoft.NETFramework.ReferenceAssemblies
+         package below supplies the net48 BCL reference assemblies via the implicit framework references,
+         so they must stay enabled. Disabling them drops System.dll/mscorlib and the build fails. -->
   </PropertyGroup>
 
   <!-- Folder holding the Oxygen Not Included reference DLLs (Managed\). Kept out of git. -->

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
+using HarmonyLib;
 using TwitchColony.Config;
 using TwitchColony.Events;
 using TwitchColony.Twitch;
@@ -8,16 +9,35 @@ using UnityEngine;
 namespace TwitchColony.Voting
 {
     /// <summary>
-    ///     Drives a round of voting: offers a random set of events, collects votes (chat counting or a
-    ///     native Twitch poll), then triggers the winning event. One instance lives for the game session.
+    ///     Drives voting as a small state machine: it offers a random set of events, collects votes
+    ///     (chat counting or a native Twitch poll), triggers the winner, then waits <c>VoteDelay</c>
+    ///     seconds and starts the next round automatically. The very first round is kicked off by the
+    ///     pause-menu button (see <see cref="PauseMenuPatches"/>). One instance lives per game session.
     ///     Independent implementation.
     /// </summary>
     public sealed class VoteController : MonoBehaviour
     {
+        public enum VotingState
+        {
+            NotStarted,     // Idle; waiting for the pause-menu button to start the first vote.
+            VoteInProgress, // A vote is open and collecting chat/poll votes.
+            VoteDelay,      // Cooldown between votes; auto-starts the next one when it elapses.
+            Error,          // Something went wrong (e.g. no events); machine parked until restarted.
+        }
+
         private static VoteController instance;
 
-        private bool voting;
-        private float endTime;
+        /// <summary>The live controller for this session (null before the colony loads).</summary>
+        public static VoteController Instance => instance;
+
+        public VotingState State { get; private set; } = VotingState.NotStarted;
+
+        /// <summary>True while the machine is running a vote or its delay (used to gate the menu button).</summary>
+        public bool IsVoteActive => State != VotingState.NotStarted && State != VotingState.Error;
+
+        public float VoteTimeRemaining { get; private set; }
+        public float VoteDelayRemaining { get; private set; }
+
         private List<GameEvent> options = new List<GameEvent>();
 
         // Chat-vote state: user -> chosen option index (last vote wins).
@@ -25,7 +45,6 @@ namespace TwitchColony.Voting
 
         // Poll state.
         private volatile string pollId;
-        private volatile bool pollResultPending;
 
         public static VoteController Ensure()
         {
@@ -40,29 +59,36 @@ namespace TwitchColony.Voting
             return instance;
         }
 
-        public bool IsVoting => voting;
-
-        /// <summary>Begin a new vote if one isn't already running.</summary>
-        public void StartVote()
+        /// <summary>
+        ///     Begin a new vote. Returns whether it actually started. Safe to call from the menu button;
+        ///     the state machine also calls it automatically when the delay between votes elapses.
+        /// </summary>
+        public bool StartVote()
         {
             var cfg = ModConfig.Instance;
-            if (voting || !cfg.EnableEvents)
+            if (!cfg.EnableEvents)
             {
-                return;
+                return false;
+            }
+
+            // Never stack a vote on top of a running one.
+            if (State == VotingState.VoteInProgress)
+            {
+                return false;
             }
 
             options = EventRegistry.PickForVote(Mathf.Clamp(cfg.OptionsPerVote, 2, 5));
             if (options.Count < 2)
             {
                 Log.Warn("Not enough events registered to vote.");
-                return;
+                State = VotingState.Error;
+                return false;
             }
 
             chatVotes.Clear();
             pollId = null;
-            pollResultPending = false;
-            voting = true;
-            endTime = Time.unscaledTime + cfg.VotingSeconds;
+            VoteTimeRemaining = cfg.VotingSeconds;
+            State = VotingState.VoteInProgress;
 
             var sb = new System.Text.StringBuilder("Voting started: ");
             for (var i = 0; i < options.Count; i++)
@@ -76,12 +102,14 @@ namespace TwitchColony.Voting
             {
                 StartTwitchPoll(cfg);
             }
+
+            return true;
         }
 
         /// <summary>Feed a chat message into the current vote (chat-counting mode).</summary>
         public void FeedChat(string user, string text)
         {
-            if (!voting || ModConfig.Instance.UseTwitchPolls || string.IsNullOrEmpty(text))
+            if (State != VotingState.VoteInProgress || ModConfig.Instance.UseTwitchPolls || string.IsNullOrEmpty(text))
             {
                 return;
             }
@@ -101,14 +129,64 @@ namespace TwitchColony.Voting
 
         private void Update()
         {
-            if (!voting || Time.unscaledTime < endTime)
+            var cfg = ModConfig.Instance;
+
+            // "Bubbles only" mode (events disabled): park the machine back to idle.
+            if (!cfg.EnableEvents)
             {
+                if (State != VotingState.NotStarted && State != VotingState.Error)
+                {
+                    State = VotingState.NotStarted;
+                    options.Clear();
+                    chatVotes.Clear();
+                }
+
                 return;
             }
 
-            voting = false;
+            switch (State)
+            {
+                case VotingState.NotStarted:
+                case VotingState.Error:
+                    break;
 
-            if (ModConfig.Instance.UseTwitchPolls && pollId != null)
+                case VotingState.VoteInProgress:
+                    if (VoteTimeRemaining > 0f)
+                    {
+                        // Unscaled: this is real streamer time, not game time.
+                        VoteTimeRemaining -= Time.unscaledDeltaTime;
+                    }
+                    else
+                    {
+                        FinishVote();
+                    }
+
+                    break;
+
+                case VotingState.VoteDelay:
+                    if (VoteDelayRemaining > 0f)
+                    {
+                        // Freeze the countdown while the game is paused, so the delay is real playtime.
+                        if (!IsGamePaused())
+                        {
+                            VoteDelayRemaining -= Time.unscaledDeltaTime;
+                        }
+                    }
+                    else
+                    {
+                        StartVote();
+                    }
+
+                    break;
+            }
+        }
+
+        /// <summary>Resolve the current vote and enter the delay before the next one auto-starts.</summary>
+        private void FinishVote()
+        {
+            var cfg = ModConfig.Instance;
+
+            if (cfg.UseTwitchPolls && pollId != null)
             {
                 FinishFromPoll();
             }
@@ -116,6 +194,10 @@ namespace TwitchColony.Voting
             {
                 FinishFromChat();
             }
+
+            // Enter the cooldown; Update() restarts the loop from here once it elapses.
+            VoteDelayRemaining = cfg.VoteDelay;
+            State = VotingState.VoteDelay;
         }
 
         private void FinishFromChat()
@@ -172,12 +254,6 @@ namespace TwitchColony.Voting
 
         private void FinishFromPoll()
         {
-            if (pollResultPending)
-            {
-                return;
-            }
-
-            pollResultPending = true;
             var cfg = ModConfig.Instance;
             var clientId = string.IsNullOrEmpty(cfg.ClientIdOverride) ? TwitchAuth.ClientId : cfg.ClientIdOverride;
             var broadcaster = string.IsNullOrEmpty(cfg.BroadcasterIdOverride) ? TwitchAuth.UserId : cfg.BroadcasterIdOverride;
@@ -211,6 +287,20 @@ namespace TwitchColony.Voting
                 });
             }) { IsBackground = true };
             thread.Start();
+        }
+
+        /// <summary>True when the in-game pause screen is showing, so the delay countdown can be frozen.</summary>
+        private static bool IsGamePaused()
+        {
+            try
+            {
+                var ps = PauseScreen.Instance;
+                return ps != null && Traverse.Create(ps).Field<bool>("shown").Value;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
