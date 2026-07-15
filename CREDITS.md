@@ -9,3 +9,8 @@ architecture, class layout, and any assets are our own, written from scratch. Th
 original is credited here as the inspiration and out of respect for that work.
 
 If you enjoyed the concept, please also check out and support the original author.
+
+## Contributors
+
+- **Martin Zatloukal** — author, design, and testing.
+- **Claude** (Anthropic's Claude Code, Opus 4.8) — implementation.
