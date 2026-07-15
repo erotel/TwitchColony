@@ -3,6 +3,9 @@ bin/
 obj/
 dist/
 
+# Release packages
+*.zip
+
 # Game reference DLLs — copied per-machine from the ONI install, never committed (Klei's files)
 /lib/
 
