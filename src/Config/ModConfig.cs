@@ -32,6 +32,7 @@ namespace TwitchColony.Config
         public float VoteDelay = 540f;        // Seconds between the end of one vote and the start of the next (auto-restart).
         public int OptionsPerVote = 3;        // How many events to offer (2-5 for polls).
         public string VoteCommandPrefix = "!vote"; // Chat-vote command, e.g. "!vote 2".
+        public bool SurpriseBoxZoom = true;   // Surprise-box event pans/zooms the camera to the box.
 
         // ---- Twitch Helix (native polls; overrides only needed for the CLI mock) ----
         public string HelixBaseUrl = "https://api.twitch.tv/helix";
