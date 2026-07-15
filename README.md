@@ -51,8 +51,58 @@ vanilla game API only. No source code or assets from the original mod are copied
 **Not (yet) reimplemented**, because they depend on large custom systems or assets that would
 have to be recreated from scratch: Pocket Dimension (custom worldgen), critter Morph, Geyser
 tuning, Party Time (needs a render tint patch), Uninsulate/tile registries, Spice Food (DLC),
-Banshee Wail chores. Contributions welcome — add new events by subclassing `GameEvent` and
-registering them in `EventRegistry.RegisterDefaults()`.
+Banshee Wail chores.
+
+To add events **inside this repo**, subclass `GameEvent` and register them in
+`EventRegistry.RegisterDefaults()`.
+
+---
+
+## Modding API — add events from another mod
+
+Other mods can contribute their own events without touching this repo. Your event joins the
+vote pool, the on-screen HUD, and the chat announcements automatically — you only implement its
+effect.
+
+1. Reference `TwitchColony.dll` from your project (`Private=false`, so you don't bundle a copy):
+   ```xml
+   <Reference Include="TwitchColony">
+     <HintPath>path\to\TwitchColony.dll</HintPath>
+     <Private>false</Private>
+   </Reference>
+   ```
+2. Subclass `GameEvent` and register it once from your `UserMod2.OnLoad`:
+   ```csharp
+   using HarmonyLib;
+   using KMod;
+   using TwitchColony.Events;
+
+   public sealed class MyEvent : GameEvent
+   {
+       public override string Id => "mymod.confetti";        // unique; duplicate Ids are ignored
+       public override string DisplayName => "Confetti storm"; // shown in the vote / HUD / chat
+       public override void Trigger()                          // runs on the main thread when it wins
+       {
+           // your effect here, using vanilla game API
+       }
+   }
+
+   public sealed class MyMod : UserMod2
+   {
+       public override void OnLoad(Harmony harmony)
+       {
+           base.OnLoad(harmony);
+           EventRegistry.AddEvent(new MyEvent());
+       }
+   }
+   ```
+
+Notes:
+- `AddEvent` persists across colony reloads; call it once at load. Duplicate `Id`s are ignored.
+- Advanced: subscribe to `EventRegistry.Registering` to add events on every colony load.
+- The public API is intentionally tiny and stable: `GameEvent` (`Id`, `DisplayName`, `Trigger`)
+  and `EventRegistry.AddEvent` / `Registering`. `Trigger()` is always called on the main thread.
+- Twitch Colony must be installed and enabled for your events to appear; it stays a single DLL.
 
 > **Not runtime-tested.** The build server cannot run the game, so events are compile-verified
 > only. Verify behavior on a Windows machine with the game and watch `Player.log` for
