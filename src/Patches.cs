@@ -31,6 +31,10 @@ namespace TwitchColony
             new Thread(TwitchAuth.Resolve) { IsBackground = true }.Start();
 
             client = new IrcClient(cfg.Channel, cfg.Nick, cfg.OauthToken);
+
+            // Let the vote controller post announcements to chat (no-op when connected anonymously).
+            VoteController.Ensure().ChatSay = client.SendChat;
+
             client.OnMessage += msg =>
             {
                 // IRC callback runs on a background thread; hop to the main thread for game/UI.

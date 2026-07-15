@@ -56,6 +56,33 @@ namespace TwitchColony.Voting
 
             LastWinnerName = ev.DisplayName;
             LastWinnerAt = Time.unscaledTime;
+
+            if (ModConfig.Instance.AnnounceInChat)
+            {
+                ChatSay?.Invoke("Winner: " + ev.DisplayName);
+            }
+        }
+
+        /// <summary>Post the current vote's options to chat (if enabled and a chat sink is wired).</summary>
+        private void AnnounceVoteInChat(ModConfig cfg)
+        {
+            if (!cfg.AnnounceInChat || ChatSay == null)
+            {
+                return;
+            }
+
+            var msg = new System.Text.StringBuilder("Vote! ");
+            for (var i = 0; i < options.Count; i++)
+            {
+                msg.Append(i + 1).Append(": ").Append(options[i].DisplayName);
+                if (i < options.Count - 1)
+                {
+                    msg.Append(" | ");
+                }
+            }
+
+            msg.Append(cfg.UseTwitchPolls ? "  -> vote in the Twitch poll" : "  -> type " + cfg.VoteCommandPrefix + " N");
+            ChatSay(msg.ToString());
         }
 
         /// <summary>Current chat-vote counts per option; index matches <see cref="CurrentOptions"/>.</summary>
@@ -80,6 +107,9 @@ namespace TwitchColony.Voting
 
         // Poll state.
         private volatile string pollId;
+
+        /// <summary>Optional sink for posting messages to Twitch chat (wired from the IRC client).</summary>
+        public System.Action<string> ChatSay;
 
         public static VoteController Ensure()
         {
@@ -132,6 +162,7 @@ namespace TwitchColony.Voting
             }
 
             Log.Info(sb.ToString());
+            AnnounceVoteInChat(cfg);
 
             if (cfg.UseTwitchPolls)
             {

@@ -24,6 +24,7 @@ namespace TwitchColony.Config
         public float BubbleCooldownSeconds = 5f; // Per-user cooldown to prevent spam.
         public int BubbleFontSize = 10;
         public int BubbleMaxWidth = 100;      // Wrap width in UI units.
+        public string BubbleFont = "";        // Name of a game TMP font to use ("" = TMP default). See Player.log for available names.
 
         // ---- Voting ----
         public bool EnableEvents = true;      // Master switch for the event/voting system.
@@ -32,6 +33,7 @@ namespace TwitchColony.Config
         public float VoteDelay = 540f;        // Seconds between the end of one vote and the start of the next (auto-restart).
         public int OptionsPerVote = 3;        // How many events to offer (2-5 for polls).
         public string VoteCommandPrefix = "!vote"; // Chat-vote command, e.g. "!vote 2".
+        public bool AnnounceInChat = true;    // Post vote options + winner to chat (needs Nick + token with chat:edit).
         public bool SurpriseBoxZoom = true;   // Surprise-box event pans/zooms the camera to the box.
 
         // ---- Twitch Helix (native polls; overrides only needed for the CLI mock) ----

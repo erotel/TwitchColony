@@ -34,6 +34,9 @@ namespace TwitchColony.Twitch
         private Thread thread;
         private volatile bool running;
 
+        // Guards socket writes: the read thread sends PONG, callers send PRIVMSG.
+        private readonly object writeLock = new object();
+
         /// <summary>Raised on the background thread for each chat message. Marshal to the main thread yourself.</summary>
         public event Action<ChatMessage> OnMessage;
 
@@ -60,6 +63,40 @@ namespace TwitchColony.Twitch
             running = true;
             thread = new Thread(Run) { IsBackground = true, Name = "TwitchColony-IRC" };
             thread.Start();
+        }
+
+        /// <summary>True when the client can post to chat (connected with a real, non-anonymous login).</summary>
+        public bool CanSend => running && !string.IsNullOrEmpty(oauth);
+
+        /// <summary>
+        ///     Send a chat message to the joined channel. Requires a non-anonymous login (Nick + token
+        ///     with the chat:edit scope); anonymous connections silently can't post.
+        /// </summary>
+        public void SendChat(string text)
+        {
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(oauth))
+            {
+                return;
+            }
+
+            var w = writer;
+            if (w == null)
+            {
+                return;
+            }
+
+            // One line only; Twitch caps chat around 500 chars.
+            text = text.Replace("\r", " ").Replace("\n", " ");
+            if (text.Length > 450)
+            {
+                text = text.Substring(0, 450);
+            }
+
+            lock (writeLock)
+            {
+                try { w.WriteLine("PRIVMSG #" + channel + " :" + text); }
+                catch (Exception e) { Log.Warn("IRC send failed: " + e.Message); }
+            }
         }
 
         public void Stop()
@@ -176,7 +213,11 @@ namespace TwitchColony.Twitch
             // Keepalive.
             if (line.StartsWith("PING", StringComparison.Ordinal))
             {
-                try { writer.WriteLine("PONG " + line.Substring(4)); } catch { /* ignore */ }
+                lock (writeLock)
+                {
+                    try { writer.WriteLine("PONG " + line.Substring(4)); } catch { /* ignore */ }
+                }
+
                 return;
             }
 
