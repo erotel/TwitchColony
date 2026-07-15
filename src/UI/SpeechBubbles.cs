@@ -188,25 +188,31 @@ namespace TwitchColony.UI
                 return existing.gameObject;
             }
 
-            var panelGo = new GameObject("Bubble");
+            var panelGo = new GameObject("Bubble", typeof(RectTransform));
             panelGo.transform.SetParent(canvas.transform, false);
 
             // Bottom-centre pivot so the bubble sits above the anchor point.
-            var prt = panelGo.GetComponent<RectTransform>() ?? panelGo.AddComponent<RectTransform>();
+            var prt = panelGo.GetComponent<RectTransform>();
             prt.pivot = new Vector2(0.5f, 0f);
 
             var img = panelGo.AddComponent<Image>();
             img.color = new Color(0f, 0f, 0f, 0.72f);
             img.raycastTarget = false;
 
-            var layout = panelGo.AddComponent<LayoutElement>();
-            layout.preferredWidth = cfg.BubbleMaxWidth;
+            // Layout group + content-size fitter make the panel (the dark box) hug the text with padding.
+            var layout = panelGo.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(9, 9, 4, 4);
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
 
             var fitter = panelGo.AddComponent<ContentSizeFitter>();
             fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var textGo = new GameObject("Text");
+            var textGo = new GameObject("Text", typeof(RectTransform));
             textGo.transform.SetParent(panelGo.transform, false);
             var tmp = textGo.AddComponent<TextMeshProUGUI>();
             var font = ResolveFont(cfg.BubbleFont);
@@ -218,18 +224,13 @@ namespace TwitchColony.UI
             tmp.fontSize = cfg.BubbleFontSize;
             tmp.color = Color.white;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.enableWordWrapping = true;
             tmp.raycastTarget = false;
             tmp.richText = false; // never interpret markup from chat as rich text
 
-            var textRect = tmp.rectTransform;
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(6, 4);
-            textRect.offsetMax = new Vector2(-6, -4);
+            var textLayout = textGo.AddComponent<LayoutElement>();
 
             var follow = panelGo.AddComponent<BubbleFollow>();
-            follow.Init(target, cfg.BubbleSeconds, tmp);
+            follow.Init(target, cfg.BubbleSeconds, tmp, textLayout, cfg.BubbleMaxWidth);
             follow.SetText(text);
 
             Active[target] = follow;
@@ -244,14 +245,19 @@ namespace TwitchColony.UI
             private float dieAt;
             private RectTransform rect;
             private TextMeshProUGUI label;
+            private LayoutElement textLayout;
+            private float maxWidth;
 
-            public void Init(Transform followTarget, float seconds, TextMeshProUGUI tmpLabel)
+            public void Init(Transform followTarget, float seconds, TextMeshProUGUI tmpLabel,
+                LayoutElement tmpLayout, float width)
             {
                 target = followTarget;
                 lifetime = seconds;
                 dieAt = Time.unscaledTime + seconds;
                 rect = GetComponent<RectTransform>();
                 label = tmpLabel;
+                textLayout = tmpLayout;
+                maxWidth = width > 0f ? width : 100f;
             }
 
             /// <summary>Set the displayed text and reset the expiry timer.</summary>
@@ -259,6 +265,23 @@ namespace TwitchColony.UI
             {
                 if (label != null)
                 {
+                    // Short text stays on one snug line; only wrap (at a capped width) when it's too wide.
+                    var unconstrained = label.GetPreferredValues(text);
+                    if (textLayout != null && unconstrained.x > maxWidth)
+                    {
+                        textLayout.preferredWidth = maxWidth;
+                        label.enableWordWrapping = true;
+                    }
+                    else
+                    {
+                        if (textLayout != null)
+                        {
+                            textLayout.preferredWidth = -1f;
+                        }
+
+                        label.enableWordWrapping = false;
+                    }
+
                     label.text = text;
                 }
 
