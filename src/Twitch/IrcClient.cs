@@ -18,6 +18,11 @@ namespace TwitchColony.Twitch
         private const string Host = "irc.chat.twitch.tv";
         private const int Port = 6697;
 
+        // Reconnect backoff: doubles per consecutive failure, capped. Reset once a connection stays up.
+        private const int BaseBackoffMs = 1000;
+        private const int MaxBackoffMs = 30000;
+        private static readonly TimeSpan StableConnection = TimeSpan.FromSeconds(30);
+
         private readonly string channel;
         private readonly string nick;
         private readonly string oauth;
@@ -67,42 +72,102 @@ namespace TwitchColony.Twitch
 
         private void Run()
         {
-            try
+            var attempt = 0;
+
+            while (running)
             {
-                tcp = new TcpClient(Host, Port);
-                ssl = new SslStream(tcp.GetStream(), false);
-                ssl.AuthenticateAsClient(Host);
-                reader = new StreamReader(ssl, Encoding.UTF8);
-                writer = new StreamWriter(ssl, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\r\n" };
+                var upSince = System.DateTime.UtcNow;
+                var opened = false;
 
-                // Request tags so we get display-name; PASS is required even anonymous (any value for justinfan).
-                writer.WriteLine("CAP REQ :twitch.tv/tags twitch.tv/commands");
-                writer.WriteLine("PASS oauth:" + (string.IsNullOrEmpty(oauth) ? "SCHMOOPIIE" : oauth));
-                writer.WriteLine("NICK " + nick);
-                writer.WriteLine("JOIN #" + channel);
-                Log.Info($"IRC connected as {nick}, joined #{channel}.");
-
-                while (running)
+                try
                 {
-                    var line = reader.ReadLine();
-                    if (line == null)
+                    OpenConnection();
+                    opened = true;
+                    upSince = System.DateTime.UtcNow;
+                    attempt = 0; // provisional reset; re-evaluated below if the connection dropped quickly
+                    ReadLoop();
+                }
+                catch (Exception e)
+                {
+                    if (running)
                     {
-                        break; // connection closed
+                        Log.Warn("IRC connection error: " + e.Message);
                     }
-
-                    HandleLine(line);
                 }
-            }
-            catch (Exception e)
-            {
-                if (running)
+                finally
                 {
-                    Log.Warn("IRC connection error: " + e.Message);
+                    CloseSocket();
                 }
+
+                if (!running)
+                {
+                    break;
+                }
+
+                // Grow the backoff on rapid failures; keep it small if the connection had stayed up.
+                var stayedUp = opened && System.DateTime.UtcNow - upSince > StableConnection;
+                attempt = stayedUp ? 0 : attempt + 1;
+
+                var shift = Math.Min(attempt, 5); // cap the exponent so the shift can't overflow
+                var delayMs = Math.Min(BaseBackoffMs << shift, MaxBackoffMs);
+                Log.Info($"IRC disconnected; reconnecting in {delayMs} ms (attempt {attempt}).");
+                SleepInterruptible(delayMs);
             }
-            finally
+
+            Log.Info("IRC client stopped.");
+        }
+
+        /// <summary>Open the TLS socket and perform the Twitch login handshake. Throws on failure.</summary>
+        private void OpenConnection()
+        {
+            tcp = new TcpClient(Host, Port);
+            ssl = new SslStream(tcp.GetStream(), false);
+            ssl.AuthenticateAsClient(Host);
+            reader = new StreamReader(ssl, Encoding.UTF8);
+            writer = new StreamWriter(ssl, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\r\n" };
+
+            // Request tags so we get display-name; PASS is required even anonymous (any value for justinfan).
+            writer.WriteLine("CAP REQ :twitch.tv/tags twitch.tv/commands");
+            writer.WriteLine("PASS oauth:" + (string.IsNullOrEmpty(oauth) ? "SCHMOOPIIE" : oauth));
+            writer.WriteLine("NICK " + nick);
+            writer.WriteLine("JOIN #" + channel);
+            Log.Info($"IRC connected as {nick}, joined #{channel}.");
+        }
+
+        /// <summary>Read lines until the connection closes (returns) or the client is stopped.</summary>
+        private void ReadLoop()
+        {
+            while (running)
             {
-                Log.Info("IRC client stopped.");
+                var line = reader.ReadLine();
+                if (line == null)
+                {
+                    return; // connection closed by the server
+                }
+
+                HandleLine(line);
+            }
+        }
+
+        private void CloseSocket()
+        {
+            try { ssl?.Dispose(); } catch { /* ignore */ }
+            try { tcp?.Close(); } catch { /* ignore */ }
+            reader = null;
+            writer = null;
+            ssl = null;
+            tcp = null;
+        }
+
+        /// <summary>Sleep in small slices so <see cref="Stop"/> interrupts the backoff promptly.</summary>
+        private void SleepInterruptible(int ms)
+        {
+            var remaining = ms;
+            while (running && remaining > 0)
+            {
+                var chunk = Math.Min(200, remaining);
+                Thread.Sleep(chunk);
+                remaining -= chunk;
             }
         }
 
