@@ -1,69 +1,63 @@
 # Publishing to the Steam Workshop
 
-Oxygen Not Included does **not** upload mods through the Steam website. You publish from
-**inside the game**, using the special **`Dev`** mods folder. This file records the process
-and the store copy so a re-upload is repeatable.
+Oxygen Not Included is **not** published from the Steam website, and **not** from an in-game
+button. It has a **separate uploader application** — the *Oxygen Not Included Uploader*
+(Steam **App ID 636750**) — that you own for free because you own the game. This file records
+the process and the store copy so a re-upload is repeatable.
 
-> You need the **Steam version** of the game and a Steam account. Workshop upload is not
-> possible on the headless build server — do this on the Windows machine with the game.
+> Do this on the Windows machine with the game + Steam. Not possible on the headless build
+> server.
+>
+> There is **no publish button inside the game**, and `debug_enable.txt` / developer mode is
+> **not** involved. If you were looking for a button in the Mods screen, that's why it isn't
+> there — publishing lives in the uploader tool below.
 
-## 0. Enable developer mode (required — this is what shows the publish button)
-
-The Workshop publish/manage buttons only appear when the game is in **developer mode**.
-Without it, a mod in `Dev\` shows up but has **no upload button** — this is the usual reason
-"there's no button".
-
-Create an **empty** file named exactly `debug_enable.txt` in the game's save folder:
-
-```
-Documents\Klei\OxygenNotIncluded\debug_enable.txt
-```
-
-(the same folder as `Player.log` and `config_twitchcolony\`, **not** inside `mods\`). Watch
-the extension — it must end in `.txt` once, not `debug_enable.txt.txt`. Restart the game; the
-Mods screen now shows dev-mod management controls.
-
-## 1. Put the built mod in the `Dev` folder
+## 1. Build & stage the mod files
 
 Build (`./build.sh`) so `dist/TwitchColony/` holds `TwitchColony.dll`, `mod_info.yaml`,
-`mod.yaml`. Copy those into — note **`Dev`**, not `Local`:
+`mod.yaml`. Put those (plus the preview image from step 2) in one folder the uploader can
+point at. The `mods\Dev\TwitchColony\` test folder works fine as the source:
 
 ```
 Documents\Klei\OxygenNotIncluded\mods\Dev\TwitchColony\
 ```
 
-`mod_info.yaml` must sit directly in that folder. Only mods under `Dev\` get the
-Workshop-publish buttons in-game; `Local\` mods don't.
+(The `Dev\` folder is for **testing the mod in-game**; it isn't required for publishing — the
+uploader can point at any folder. `mod_info.yaml` must sit directly in it.)
 
 ## 2. Add a preview image
 
-Put a **`preview.png`** in the same `Dev\TwitchColony\` folder (square, **512×512**
-recommended; png/jpg). Best is a real in-game screenshot — a chat bubble above a duplicant
-plus the vote HUD. This becomes the Workshop thumbnail.
+Put a **`preview.png`** in that folder (square, **512×512** recommended; png/jpg, under
+1 MB). Best is a real in-game screenshot — a chat bubble above a duplicant plus the vote HUD.
+This becomes the Workshop thumbnail.
 
-## 3. Publish from the game
+## 3. Install & run the uploader tool
 
-1. Launch ONI → **Mods**.
-2. Find **Twitch Colony** (dev mods are listed with extra management controls).
-3. Click the manage / **⋯** control → **Publish to Steam Workshop** (first time) or
-   **Update** (subsequent uploads).
-4. Accept the Steam Workshop Legal Agreement if prompted.
-5. The game creates the Workshop item and links it to the mod's `staticID` (`TwitchColony`),
-   so future **Update** clicks patch the same item — don't re-publish a second copy.
+1. In Steam, open your **Library** and switch the type filter to **Tools** (the dropdown above
+   the library list — tools are hidden from the Games view). Find **Oxygen Not Included
+   Uploader** and **Install** it.
+   - Can't see it? Trigger the install directly with `steam://install/636750`, or look it up
+     via [SteamDB App 636750](https://steamdb.info/app/636750/).
+2. **Launch** the uploader.
 
-## 4. Finish on the Steam Workshop page
+## 4. Publish
 
-The new item starts **Hidden**. Open it (Steam → your profile → Workshop items), then:
-
-- Set **Visibility** to **Public** when ready.
-- Paste the **title / description** (below).
-- Add **tags** (below).
-- Confirm the preview image looks right.
+1. Click **Add** (top-left).
+2. Fill in:
+   - **Content folder** → the folder from step 1 (with the `.dll`, both yaml files, and
+     `preview.png`).
+   - **Preview image** → `preview.png`.
+   - **Title**, **Description**, **Tags** — use the store copy below.
+3. Click **Publish!** and wait for it to finish. Accept the Steam Workshop Legal Agreement if
+   prompted.
+4. The item is created **Hidden**. Open it (Steam → your profile → **Workshop Items**) and set
+   **Visibility → Public** when ready. Double-check the thumbnail and description there.
 
 ## 5. Updating later
 
-Bump `version` in `mod_info.yaml`, rebuild, copy the new files over the `Dev\TwitchColony\`
-folder, then in-game **Mods → Twitch Colony → Update**. Same Workshop item, new build.
+Bump `version` in `mod_info.yaml`, rebuild, refresh the files in the source folder, then in the
+uploader **select the existing item** (don't click *Add* again — that makes a second copy) and
+re-publish. Same Workshop item, new build.
 
 ---
 
