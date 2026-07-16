@@ -41,9 +41,10 @@ namespace TwitchColony
 
             client = new IrcClient(cfg.Channel, cfg.Nick, cfg.OauthToken);
 
-            // Let the vote controller + critter adoption post announcements to chat (no-op anonymous).
+            // Let the vote controller + critter adoption + sub rewards post announcements to chat (no-op anonymous).
             VoteController.Ensure().ChatSay = client.SendChat;
             CritterAdoption.ChatSay = client.SendChat;
+            SubRewards.ChatSay = client.SendChat;
 
             client.OnMessage += msg =>
             {
@@ -63,6 +64,17 @@ namespace TwitchColony
                     if (cfg.EnableCritterAdopt)
                     {
                         CritterAdoption.TryHandle(msg.User, msg.Text);
+                    }
+                });
+            };
+            client.OnSub += sub =>
+            {
+                // IRC callback runs on a background thread; the reward effect touches the game.
+                MainThread.Run(() =>
+                {
+                    if (ModConfig.Instance.EnableSubRewards)
+                    {
+                        SubRewards.Handle(sub);
                     }
                 });
             };

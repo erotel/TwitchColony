@@ -206,6 +206,18 @@ messages also pop up as bubbles above that critter, just like duplicants.
 | `AnnounceInChat` | `true` | Post the options and the winner into chat. Needs `Nick` + a token with `chat:edit`; otherwise it silently does nothing. |
 | `SurpriseBoxZoom` | `true` | The Surprise-Box event pans/zooms the camera to the box. Set `false` if you dislike the camera moving. |
 
+### Twitch subs
+
+When a viewer subscribes, resubscribes, or gifts a sub, the colony gets a **positive event** as a
+thank-you (heal, feast, free harvest, rain of gold/diamonds, a surprise box, …). These arrive over
+the normal chat stream — **no Helix API, scopes, or extra login needed** (the channel just has to
+have subs, i.e. Affiliate/Partner). Works even on the anonymous connection.
+
+| Field | Default | What it does |
+|---|---|---|
+| `EnableSubRewards` | `true` | Fire a positive colony event on each sub / resub / gifted sub. |
+| `SubRewardCooldownSeconds` | `12` | Minimum gap between sub-reward events, so a sub-train / mass gift can't flood the colony with dozens of events at once. |
+
 ### Twitch Helix (native polls — advanced)
 
 | Field | Default | What it does |

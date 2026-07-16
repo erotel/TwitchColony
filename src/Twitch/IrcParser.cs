@@ -81,6 +81,75 @@ namespace TwitchColony.Twitch
             return new ChatMessage(user.ToLowerInvariant(), display, text.TrimEnd('\r', '\n'));
         }
 
+        /// <summary>
+        ///     Parse a subscription <c>USERNOTICE</c> (sub / resub / gifted sub) into a <see cref="SubNotice"/>,
+        ///     or null for any other line. Twitch delivers these on the chat stream when tags+commands
+        ///     capabilities are enabled.
+        /// </summary>
+        public static SubNotice ParseSub(string line)
+        {
+            if (string.IsNullOrEmpty(line) || line[0] != '@')
+            {
+                return null; // sub notices always carry a tag block
+            }
+
+            var sp = line.IndexOf(' ');
+            if (sp < 0)
+            {
+                return null;
+            }
+
+            var tags = new Dictionary<string, string>();
+            ParseTags(line.Substring(1, sp - 1), tags);
+            var rest = line.Substring(sp + 1);
+
+            // Skip the source prefix if present.
+            if (rest.Length > 0 && rest[0] == ':')
+            {
+                var s2 = rest.IndexOf(' ');
+                if (s2 < 0)
+                {
+                    return null;
+                }
+
+                rest = rest.Substring(s2 + 1);
+            }
+
+            if (!rest.StartsWith("USERNOTICE", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            tags.TryGetValue("msg-id", out var msgId);
+            if (msgId != "sub" && msgId != "resub" && msgId != "subgift" && msgId != "anonsubgift")
+            {
+                return null; // ignore raids, rituals, bits-badge, etc.
+            }
+
+            tags.TryGetValue("login", out var login);
+            tags.TryGetValue("display-name", out var display);
+            tags.TryGetValue("system-msg", out var sysMsg);
+            tags.TryGetValue("msg-param-sub-plan", out var plan);
+            tags.TryGetValue("msg-param-cumulative-months", out var monthsStr);
+            int.TryParse(monthsStr, out var months);
+
+            var user = !string.IsNullOrEmpty(login) ? login : display;
+            if (string.IsNullOrEmpty(user))
+            {
+                user = "someone";
+            }
+
+            return new SubNotice
+            {
+                User = user.ToLowerInvariant(),
+                Display = string.IsNullOrEmpty(display) ? user : display,
+                MsgId = msgId,
+                CumulativeMonths = months,
+                SubPlan = plan ?? "1000",
+                SystemMsg = (sysMsg ?? "").Replace("\\s", " ").Trim(),
+            };
+        }
+
         private static void ParseTags(string tagBlock, IDictionary<string, string> into)
         {
             foreach (var pair in tagBlock.Split(';'))

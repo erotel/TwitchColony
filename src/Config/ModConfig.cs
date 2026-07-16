@@ -42,6 +42,10 @@ namespace TwitchColony.Config
         public bool AnnounceInChat = true;    // Post vote options + winner to chat (needs Nick + token with chat:edit).
         public bool SurpriseBoxZoom = true;   // Surprise-box event pans/zooms the camera to the box.
 
+        // ---- Twitch subs ----
+        public bool EnableSubRewards = true;       // Fire a positive colony event when someone subs/resubs/gifts.
+        public float SubRewardCooldownSeconds = 12f; // Min gap between sub-reward events (coalesces sub-trains).
+
         // ---- Twitch Helix (native polls; overrides only needed for the CLI mock) ----
         public string HelixBaseUrl = "https://api.twitch.tv/helix";
         public string ClientIdOverride = ""; // Only for the Twitch CLI mock; empty = read from token validation.

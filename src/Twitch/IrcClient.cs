@@ -40,6 +40,9 @@ namespace TwitchColony.Twitch
         /// <summary>Raised on the background thread for each chat message. Marshal to the main thread yourself.</summary>
         public event Action<ChatMessage> OnMessage;
 
+        /// <summary>Raised on the background thread for each sub / resub / gifted sub. Marshal yourself.</summary>
+        public event Action<SubNotice> OnSub;
+
         public IrcClient(string channel, string nick, string oauth)
         {
             this.channel = (channel ?? "").Trim().ToLowerInvariant();
@@ -235,6 +238,13 @@ namespace TwitchColony.Twitch
             if (parsed != null)
             {
                 try { OnMessage?.Invoke(parsed); } catch (Exception e) { Log.Warn("OnMessage handler threw: " + e.Message); }
+                return;
+            }
+
+            var sub = IrcParser.ParseSub(line);
+            if (sub != null)
+            {
+                try { OnSub?.Invoke(sub); } catch (Exception e) { Log.Warn("OnSub handler threw: " + e.Message); }
             }
         }
     }
