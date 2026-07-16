@@ -30,6 +30,7 @@ namespace TwitchColony
 
             MainThread.Ensure();
             EventRegistry.RegisterDefaults();
+            CritterAdoption.Reset();
             VoteController.Ensure();
             VoteHud.Ensure();
 
@@ -40,8 +41,9 @@ namespace TwitchColony
 
             client = new IrcClient(cfg.Channel, cfg.Nick, cfg.OauthToken);
 
-            // Let the vote controller post announcements to chat (no-op when connected anonymously).
+            // Let the vote controller + critter adoption post announcements to chat (no-op anonymous).
             VoteController.Ensure().ChatSay = client.SendChat;
+            CritterAdoption.ChatSay = client.SendChat;
 
             client.OnMessage += msg =>
             {
@@ -56,6 +58,11 @@ namespace TwitchColony
                     if (cfg.EnableEvents)
                     {
                         VoteController.Ensure().FeedChat(msg.User, msg.Text);
+                    }
+
+                    if (cfg.EnableCritterAdopt)
+                    {
+                        CritterAdoption.TryHandle(msg.User, msg.Text);
                     }
                 });
             };

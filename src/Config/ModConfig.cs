@@ -26,6 +26,10 @@ namespace TwitchColony.Config
         public int BubbleMaxWidth = 100;      // Wrap width in UI units.
         public string BubbleFont = "";        // Name of a game TMP font to use ("" = TMP default). See Player.log for available names.
 
+        // ---- Critter adoption ----
+        public bool EnableCritterAdopt = true; // Viewers can "adopt" a critter (rename it to their nick) via chat.
+        public string AdoptCommand = "!adopt"; // Chat command that adopts a random free critter for the viewer.
+
         // ---- Voting ----
         public bool EnableEvents = true;      // Master switch for the event/voting system.
         public int StartAfterCycles = 0;      // Cycles to wait after the colony loads before the FIRST vote auto-starts (0 = manual, use the pause-menu button). Gives the streamer time to prepare.

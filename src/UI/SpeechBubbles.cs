@@ -59,7 +59,8 @@ namespace TwitchColony.UI
                 return false;
             }
 
-            var target = FindMinionByName(user);
+            // Match a duplicant first, then an adopted critter carrying the viewer's nick.
+            var target = FindMinionByName(user) ?? FindCritterByName(user);
             if (target == null)
             {
                 return false;
@@ -108,6 +109,39 @@ namespace TwitchColony.UI
                 if (string.Equals(name, user, StringComparison.OrdinalIgnoreCase))
                 {
                     return identity.gameObject;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Find a critter whose (adopted) name matches the chatter's nick, or null.</summary>
+        private static GameObject FindCritterByName(string user)
+        {
+            var brains = Components.Brains?.Items;
+            if (brains == null)
+            {
+                return null;
+            }
+
+            foreach (var brain in brains)
+            {
+                if (!(brain is CreatureBrain))
+                {
+                    continue;
+                }
+
+                var go = brain.gameObject;
+                var sel = go != null ? go.GetComponent<KSelectable>() : null;
+                if (sel == null)
+                {
+                    continue;
+                }
+
+                var name = Util.StripTextFormatting(sel.GetName() ?? "");
+                if (string.Equals(name, user, StringComparison.OrdinalIgnoreCase))
+                {
+                    return go;
                 }
             }
 

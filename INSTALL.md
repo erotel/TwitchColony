@@ -178,8 +178,18 @@ Defaults are what the mod writes on first run.
 | `BubbleMaxWidth` | `100` | Wrap width (UI units) before text wraps to a new line. |
 | `BubbleFont` | `""` | Name of a game TMP font. `""` = default. If you set a name that doesn't exist, the mod logs the list of available font names to `Player.log`. |
 
-A bubble appears only when a live duplicant's name matches the chatter's nick (case-insensitive).
-No matching dupe → no bubble.
+A bubble appears only when a live duplicant's name matches the chatter's nick (case-insensitive),
+**or** an adopted critter carries that nick (see below). No match → no bubble.
+
+### Critter adoption
+
+Viewers can "adopt" a critter — it gets renamed to their Twitch nick, and from then on their chat
+messages also pop up as bubbles above that critter, just like duplicants.
+
+| Field | Default | What it does |
+|---|---|---|
+| `EnableCritterAdopt` | `true` | Master switch for the adopt command. |
+| `AdoptCommand` | `"!adopt"` | A viewer types this in chat to adopt a random free (un-adopted) critter. One critter per viewer; if none are free, nothing happens. With `AnnounceInChat` + a login, the bot confirms in chat. |
 
 ### Voting
 
