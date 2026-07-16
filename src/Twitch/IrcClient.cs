@@ -43,8 +43,17 @@ namespace TwitchColony.Twitch
         public IrcClient(string channel, string nick, string oauth)
         {
             this.channel = (channel ?? "").Trim().ToLowerInvariant();
-            this.nick = string.IsNullOrEmpty(nick) ? "justinfan" + new System.Random().Next(10000, 99999) : nick.Trim();
             this.oauth = oauth ?? "";
+
+            // Twitch only permits a named login when a valid chat token is supplied. Without a
+            // token we MUST connect anonymously, and anonymous logins require a justinfan* nick —
+            // a real nick (e.g. one left in the config from an earlier token setup) makes Twitch
+            // reject the login and drop the connection every few seconds. So: no token → force an
+            // anonymous nick and ignore whatever Nick is configured.
+            var configuredNick = (nick ?? "").Trim();
+            this.nick = string.IsNullOrEmpty(this.oauth) || string.IsNullOrEmpty(configuredNick)
+                ? "justinfan" + new System.Random().Next(10000, 99999)
+                : configuredNick;
         }
 
         public void Start()
@@ -168,7 +177,8 @@ namespace TwitchColony.Twitch
             writer.WriteLine("PASS oauth:" + (string.IsNullOrEmpty(oauth) ? "SCHMOOPIIE" : oauth));
             writer.WriteLine("NICK " + nick);
             writer.WriteLine("JOIN #" + channel);
-            Log.Info($"IRC connected as {nick}, joined #{channel}.");
+            var mode = string.IsNullOrEmpty(oauth) ? "anonymously" : "authenticated";
+            Log.Info($"IRC connected {mode} (nick {nick}), joined #{channel}.");
         }
 
         /// <summary>Read lines until the connection closes (returns) or the client is stopped.</summary>
