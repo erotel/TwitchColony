@@ -29,6 +29,7 @@ namespace TwitchColony.Config
         // ---- Critter adoption ----
         public bool EnableCritterAdopt = true; // Viewers can "adopt" a critter (rename it to their nick) via chat.
         public string AdoptCommand = "!adopt"; // Chat command that adopts a random free critter for the viewer.
+        public bool ShowAdoptedNameTag = true; // Show a persistent name label under each adopted critter.
 
         // ---- Voting ----
         public bool EnableEvents = true;      // Master switch for the event/voting system.

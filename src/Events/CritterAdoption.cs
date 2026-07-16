@@ -26,6 +26,7 @@ namespace TwitchColony.Events
         public static void Reset()
         {
             AdoptedByUser.Clear();
+            CritterNameTags.Clear();
         }
 
         /// <summary>If the chat line is the adopt command, adopt a free critter for the viewer.</summary>
@@ -89,6 +90,11 @@ namespace TwitchColony.Events
 
             Log.Info($"{user} adopted a {species}.");
             SpeechBubbles.ShowRaw(critter.transform, "🐾 " + user); // quick visual cue over the critter
+            if (cfg.ShowAdoptedNameTag)
+            {
+                CritterNameTags.Show(critter.transform, user); // persistent name label under the critter
+            }
+
             if (cfg.AnnounceInChat)
             {
                 ChatSay?.Invoke($"{user} adopted a {species}!");

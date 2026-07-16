@@ -190,6 +190,7 @@ messages also pop up as bubbles above that critter, just like duplicants.
 |---|---|---|
 | `EnableCritterAdopt` | `true` | Master switch for the adopt command. |
 | `AdoptCommand` | `"!adopt"` | A viewer types this in chat to adopt a random free (un-adopted) critter. One critter per viewer; if none are free, nothing happens. With `AnnounceInChat` + a login, the bot confirms in chat. |
+| `ShowAdoptedNameTag` | `true` | Show a small persistent name label under each adopted critter (the owner's nick), like a nameplate. Set `false` to keep only the chat bubbles. |
 
 ### Voting
 
