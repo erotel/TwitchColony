@@ -43,8 +43,8 @@ namespace TwitchColony.Config
         public bool SurpriseBoxZoom = true;   // Surprise-box event pans/zooms the camera to the box.
 
         // ---- Twitch subs ----
-        public bool EnableSubRewards = true;       // Fire a positive colony event when someone subs/resubs/gifts.
-        public float SubRewardCooldownSeconds = 12f; // Min gap between sub-reward events (coalesces sub-trains).
+        public bool EnableSubRewards = true;       // Show a "NEW SUB" banner + make dupes cheer when someone subs/resubs/gifts.
+        public float SubRewardCooldownSeconds = 12f; // Min gap between sub celebrations (coalesces sub-trains).
 
         // ---- Twitch Helix (native polls; overrides only needed for the CLI mock) ----
         public string HelixBaseUrl = "https://api.twitch.tv/helix";

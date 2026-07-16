@@ -208,15 +208,15 @@ messages also pop up as bubbles above that critter, just like duplicants.
 
 ### Twitch subs
 
-When a viewer subscribes, resubscribes, or gifts a sub, the colony gets a **positive event** as a
-thank-you (heal, feast, free harvest, rain of gold/diamonds, a surprise box, …). These arrive over
-the normal chat stream — **no Helix API, scopes, or extra login needed** (the channel just has to
+When a viewer subscribes, resubscribes, or gifts a sub, the HUD shows a **"NEW SUB" banner** and the
+**duplicants cheer** (clap / thumbs-up / sing) — a pure celebration, no gameplay change. These arrive
+over the normal chat stream — **no Helix API, scopes, or extra login needed** (the channel just has to
 have subs, i.e. Affiliate/Partner). Works even on the anonymous connection.
 
 | Field | Default | What it does |
 |---|---|---|
-| `EnableSubRewards` | `true` | Fire a positive colony event on each sub / resub / gifted sub. |
-| `SubRewardCooldownSeconds` | `12` | Minimum gap between sub-reward events, so a sub-train / mass gift can't flood the colony with dozens of events at once. |
+| `EnableSubRewards` | `true` | Banner + duplicant cheer on each sub / resub / gifted sub. |
+| `SubRewardCooldownSeconds` | `12` | Minimum gap between celebrations, so a sub-train / mass gift can't restart every dupe's emote dozens of times. |
 
 ### Twitch Helix (native polls — advanced)
 

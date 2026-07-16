@@ -19,6 +19,17 @@ namespace TwitchColony.UI
         private GameObject panel;
         private TextMeshProUGUI text;
 
+        // A transient banner (e.g. "NEW SUB") that takes over the panel for a few seconds.
+        private static string flashText;
+        private static float flashUntil;
+
+        /// <summary>Show a short-lived banner in the HUD, independent of voting (e.g. a sub celebration).</summary>
+        public static void Flash(string message, float seconds)
+        {
+            flashText = message;
+            flashUntil = Time.unscaledTime + seconds;
+        }
+
         public static void Ensure()
         {
             if (instance != null)
@@ -82,7 +93,18 @@ namespace TwitchColony.UI
             }
 
             var vc = VoteController.Instance;
-            var content = vc != null && ModConfig.Instance.EnableEvents ? BuildContent(vc) : null;
+
+            // A flash banner (sub celebration) takes priority and shows even if voting is off.
+            string content;
+            if (Time.unscaledTime < flashUntil)
+            {
+                content = flashText;
+            }
+            else
+            {
+                content = vc != null && ModConfig.Instance.EnableEvents ? BuildContent(vc) : null;
+            }
+
             var show = content != null;
 
             if (panel.activeSelf != show)
