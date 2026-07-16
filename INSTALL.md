@@ -213,49 +213,50 @@ part, and set `Nick` to the account the token belongs to.
 - Native Twitch polls → `channel:read:polls` + `channel:manage:polls` (and the account must
   be Affiliate or Partner — Twitch only allows polls on those channels).
 
-### Option A — one-click authorize link (your own Twitch app)
+### Option A — one-click authorize link
 
-This is the same approach the original mod uses: a permanent link that sends you to Twitch,
-you click **Authorize**, and a small page shows your token to copy. Because the link carries
-a **`client_id`**, you have to register a free Twitch app **once** — you can't reuse someone
-else's.
+Just like the original mod: click a link, approve on Twitch, and a small page shows your
+token to copy. Pick the one matching what you want to do:
 
-1. **Host the login page.** This repo ships [`docs/login.html`](docs/login.html). Enable
-   **GitHub Pages** on your fork (Settings → Pages → *Deploy from a branch* → `main` /
-   `/docs`). Your page is then at:
+[![Register token — chat voting](https://img.shields.io/badge/Register%20token-Chat%20voting-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://id.twitch.tv/oauth2/authorize?client_id=npyqq5754vpi2lqs83jhirg193n7pz&redirect_uri=https://erotel.github.io/TwitchColony/login.html&response_type=token&scope=chat:read+chat:edit)
+
+&nbsp;→ scopes `chat:read` + `chat:edit`. Use this for chat bubbles that talk back and for
+`AnnounceInChat`.
+
+[![Register token — Twitch polls](https://img.shields.io/badge/Register%20token-Twitch%20polls-9146FF?style=for-the-badge&logo=twitch&logoColor=white)](https://id.twitch.tv/oauth2/authorize?client_id=npyqq5754vpi2lqs83jhirg193n7pz&redirect_uri=https://erotel.github.io/TwitchColony/login.html&response_type=token&scope=chat:read+chat:edit+channel:read:polls+channel:manage:polls)
+
+&nbsp;→ adds `channel:read:polls` + `channel:manage:polls` on top. Use this to run **native
+Twitch polls** (`UseTwitchPolls`, Affiliate/Partner only). Covers chat too.
+
+After you click **Authorize**, Twitch sends you to the mod's login page, which shows the
+token — copy it into `OauthToken` (no `oauth:` prefix), and set `Nick` to the account you
+authorized with. The link is permanent; reuse it whenever you need a fresh token.
+
+<details>
+<summary><strong>Running your own fork?</strong> Build your own link (5 min setup).</summary>
+
+The buttons above carry this repo's Twitch `client_id` and point at its GitHub Pages login
+page. If you fork the project, register your own free app so the redirect matches your Pages
+URL:
+
+1. **Host the login page.** Enable GitHub Pages on your fork (Settings → Pages → *Deploy
+   from a branch* → `main` / `/docs`). It serves [`docs/login.html`](docs/login.html) at
+   `https://<your-github-name>.github.io/<repo>/login.html`.
+2. **Register a Twitch app** at the
+   [Developer Console](https://dev.twitch.tv/console/apps) → *Register Your Application*.
+   Set **OAuth Redirect URLs** to that exact Pages URL (the app name may **not** contain the
+   word "Twitch"). Copy the **Client ID**.
+3. **Assemble the link** — replace `YOUR_CLIENT_ID` and the redirect host:
 
    ```
-   https://<your-github-name>.github.io/TwitchColony/login.html
+   https://id.twitch.tv/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://YOUR_NAME.github.io/YOUR_REPO/login.html&response_type=token&scope=chat:read+chat:edit+channel:read:polls+channel:manage:polls
    ```
 
-2. **Register a Twitch app.** Go to the
-   [Twitch Developer Console](https://dev.twitch.tv/console/apps) → **Register Your
-   Application**. Set:
-   - **OAuth Redirect URLs** → the exact Pages URL from step 1.
-   - **Category** → *Application Integration* (or *Chat Bot*).
+   The `redirect_uri` must match the registered Redirect URL **character for character**, or
+   Twitch rejects it. (The `client_id` is public — safe to commit; only the *Client Secret*,
+   which this flow never uses, stays private.)
 
-   Copy the app's **Client ID**.
-
-3. **Build your link.** Take one of the templates below, replace `YOUR_CLIENT_ID` and
-   `YOUR_GITHUB_NAME`, and open it. Approve on Twitch → copy the token from your page →
-   paste into `OauthToken`.
-
-   **Chat only** (bubbles that need sending + `AnnounceInChat`):
-
-   ```
-   https://id.twitch.tv/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://YOUR_GITHUB_NAME.github.io/TwitchColony/login.html&response_type=token&scope=chat:read+chat:edit
-   ```
-
-   **Chat + native polls** (everything):
-
-   ```
-   https://id.twitch.tv/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://YOUR_GITHUB_NAME.github.io/TwitchColony/login.html&response_type=token&scope=chat:read+chat:edit+channel:read:polls+channel:manage:polls
-   ```
-
-   The `redirect_uri` in the link must match the **Redirect URL** you registered in step 2
-   **character for character**, or Twitch rejects it.
-
-Once set up, this link is permanent — reuse it whenever you need a fresh token.
+</details>
 
 ### Option B — no setup, use a token generator
 
