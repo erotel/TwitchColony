@@ -204,22 +204,69 @@ No matching dupe → no bubble.
 You only need a token if you want the bot to **talk in chat** (`AnnounceInChat`) or to run
 **native polls** (`UseTwitchPolls`). Pure bubbles + chat voting need **no token at all**.
 
-Whatever tool you use, paste the token into `OauthToken` **without** the leading `oauth:`
-part. The `Nick` must be the account the token belongs to.
+Whatever route you use, paste the result into `OauthToken` **without** any leading `oauth:`
+part, and set `Nick` to the account the token belongs to.
 
 **Scopes you need:**
 
-- Announcing in chat → `chat:edit` (and `chat:read`).
-- Native Twitch polls → `channel:manage:polls` + `channel:read:polls` (and the account
-  must be Affiliate or Partner — Twitch only allows polls on those channels).
+- Announcing in chat → `chat:read` + `chat:edit`.
+- Native Twitch polls → `channel:read:polls` + `channel:manage:polls` (and the account must
+  be Affiliate or Partner — Twitch only allows polls on those channels).
 
-**Where to get one:** any reputable Twitch token generator, or your own app registered in
-the [Twitch Developer Console](https://dev.twitch.tv/console) via an OAuth flow. Treat the
-token like a password — anyone with it can post as your bot. If it leaks, revoke it in your
-Twitch **Connections** settings and generate a new one.
+### Option A — one-click authorize link (your own Twitch app)
 
-> Tokens expire. If chat messages or polls suddenly stop working, regenerate the token and
-> update `config.json`.
+This is the same approach the original mod uses: a permanent link that sends you to Twitch,
+you click **Authorize**, and a small page shows your token to copy. Because the link carries
+a **`client_id`**, you have to register a free Twitch app **once** — you can't reuse someone
+else's.
+
+1. **Host the login page.** This repo ships [`docs/login.html`](docs/login.html). Enable
+   **GitHub Pages** on your fork (Settings → Pages → *Deploy from a branch* → `main` /
+   `/docs`). Your page is then at:
+
+   ```
+   https://<your-github-name>.github.io/TwitchColony/login.html
+   ```
+
+2. **Register a Twitch app.** Go to the
+   [Twitch Developer Console](https://dev.twitch.tv/console/apps) → **Register Your
+   Application**. Set:
+   - **OAuth Redirect URLs** → the exact Pages URL from step 1.
+   - **Category** → *Application Integration* (or *Chat Bot*).
+
+   Copy the app's **Client ID**.
+
+3. **Build your link.** Take one of the templates below, replace `YOUR_CLIENT_ID` and
+   `YOUR_GITHUB_NAME`, and open it. Approve on Twitch → copy the token from your page →
+   paste into `OauthToken`.
+
+   **Chat only** (bubbles that need sending + `AnnounceInChat`):
+
+   ```
+   https://id.twitch.tv/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://YOUR_GITHUB_NAME.github.io/TwitchColony/login.html&response_type=token&scope=chat:read+chat:edit
+   ```
+
+   **Chat + native polls** (everything):
+
+   ```
+   https://id.twitch.tv/oauth2/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=https://YOUR_GITHUB_NAME.github.io/TwitchColony/login.html&response_type=token&scope=chat:read+chat:edit+channel:read:polls+channel:manage:polls
+   ```
+
+   The `redirect_uri` in the link must match the **Redirect URL** you registered in step 2
+   **character for character**, or Twitch rejects it.
+
+Once set up, this link is permanent — reuse it whenever you need a fresh token.
+
+### Option B — no setup, use a token generator
+
+If you don't want to register an app, use a reputable third-party generator that hosts its
+own app and lets you pick scopes (for example **twitchtokengenerator.com**). Select the
+scopes listed above, authorize, and copy the token. Simplest to start with; the downside is
+you're trusting a third party with the authorization step.
+
+> **Keep the token secret** — anyone with it can post as your bot. If it leaks, revoke it in
+> your Twitch **Connections** settings and generate a new one. Tokens also **expire**: if
+> chat messages or polls suddenly stop working, regenerate and update `config.json`.
 
 ---
 

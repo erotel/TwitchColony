@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twitch Colony — your chat token</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    max-width: 640px; margin: 6vh auto; padding: 0 1.2rem; line-height: 1.5;
+  }
+  h1 { font-size: 1.4rem; }
+  .token {
+    display: block; width: 100%; box-sizing: border-box; margin: 1rem 0;
+    padding: .8rem; font-family: ui-monospace, Consolas, monospace; font-size: 1rem;
+    border: 1px solid #8884; border-radius: 8px; background: #8881;
+  }
+  button {
+    font: inherit; padding: .55rem 1rem; border-radius: 8px; border: 1px solid #8886;
+    background: #9146FF; color: #fff; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  .muted { opacity: .75; font-size: .92rem; }
+  .err { color: #c0392b; }
+  code { background: #8881; padding: .1em .35em; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <h1>Twitch Colony — your chat token</h1>
+  <p id="intro" class="muted">Reading your token from the URL…</p>
+
+  <input id="token" class="token" readonly hidden aria-label="OAuth token">
+  <button id="copy" hidden>Copy token</button>
+
+  <p id="help" class="muted" hidden>
+    Paste this value into <code>OauthToken</code> in your
+    <code>config.json</code> (it has <strong>no</strong> <code>oauth:</code> prefix — good,
+    that's what the mod wants). Keep it secret: anyone with it can act as your bot. You can
+    revoke it anytime in your Twitch <em>Connections</em> settings.
+  </p>
+
+<script>
+  // Twitch's implicit OAuth flow returns the token in the URL fragment:
+  //   .../login.html#access_token=XXXX&scope=...&token_type=bearer
+  // This page just extracts it and shows it — nothing is sent anywhere; it's a static file.
+  (function () {
+    var intro = document.getElementById("intro");
+    var frag = (location.hash || "").replace(/^#/, "");
+    var params = new URLSearchParams(frag);
+    var token = params.get("access_token");
+    var error = params.get("error_description") || params.get("error");
+
+    if (token) {
+      var box = document.getElementById("token");
+      box.value = token;
+      box.hidden = false;
+      document.getElementById("copy").hidden = false;
+      document.getElementById("help").hidden = false;
+      intro.textContent = "Success — here is your token:";
+
+      document.getElementById("copy").addEventListener("click", function () {
+        box.hidden = false;
+        box.select();
+        navigator.clipboard && navigator.clipboard.writeText(box.value);
+        this.textContent = "Copied!";
+      });
+    } else if (error) {
+      intro.className = "err";
+      intro.textContent = "Twitch returned an error: " + error;
+    } else {
+      intro.textContent =
+        "No token in the URL. Start from the authorize link in the mod's INSTALL guide.";
+    }
+  })();
+</script>
+</body>
+</html>
