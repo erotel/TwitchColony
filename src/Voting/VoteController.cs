@@ -108,6 +108,16 @@ namespace TwitchColony.Voting
         // Poll state.
         private volatile string pollId;
 
+        // Cycle at which the colony was first seen; used by the StartAfterCycles auto-start gate.
+        private int startCycle = -1;
+        private bool cycleGateLogged;
+
+        /// <summary>
+        ///     Cycles still to wait before the first vote auto-starts (StartAfterCycles), or 0 once the
+        ///     gate has passed / isn't in use. For the on-screen HUD hint.
+        /// </summary>
+        public int CyclesUntilStart { get; private set; }
+
         /// <summary>Optional sink for posting messages to Twitch chat (wired from the IRC client).</summary>
         public System.Action<string> ChatSay;
 
@@ -213,6 +223,9 @@ namespace TwitchColony.Voting
             switch (State)
             {
                 case VotingState.NotStarted:
+                    TickStartAfterCycles(cfg);
+                    break;
+
                 case VotingState.Error:
                     break;
 
@@ -244,6 +257,62 @@ namespace TwitchColony.Voting
                     }
 
                     break;
+            }
+        }
+
+        /// <summary>
+        ///     While idle, auto-start the first vote once <c>StartAfterCycles</c> cycles have elapsed
+        ///     since the colony loaded. Disabled (0) leaves the first start to the pause-menu button.
+        ///     The button still works to start earlier.
+        /// </summary>
+        private void TickStartAfterCycles(ModConfig cfg)
+        {
+            if (cfg.StartAfterCycles <= 0)
+            {
+                CyclesUntilStart = 0;
+                return;
+            }
+
+            var cycle = CurrentCycle();
+            if (cycle < 0)
+            {
+                return; // GameClock not ready yet.
+            }
+
+            // Anchor to the cycle we first saw, so "after N cycles" is relative to load — works whether
+            // it's a fresh colony (cycle 0) or a save loaded mid-game.
+            if (startCycle < 0)
+            {
+                startCycle = cycle;
+            }
+
+            var elapsed = cycle - startCycle;
+            CyclesUntilStart = Mathf.Max(0, cfg.StartAfterCycles - elapsed);
+
+            if (!cycleGateLogged)
+            {
+                cycleGateLogged = true;
+                Log.Info($"Voting will auto-start in {CyclesUntilStart} cycle(s) (StartAfterCycles={cfg.StartAfterCycles}).");
+            }
+
+            if (elapsed >= cfg.StartAfterCycles)
+            {
+                Log.Info("StartAfterCycles reached; starting first vote.");
+                StartVote();
+            }
+        }
+
+        /// <summary>Current colony cycle (0-based), or -1 if the game clock isn't available yet.</summary>
+        private static int CurrentCycle()
+        {
+            try
+            {
+                var clock = GameClock.Instance;
+                return clock != null ? clock.GetCycle() : -1;
+            }
+            catch
+            {
+                return -1;
             }
         }
 

@@ -186,6 +186,7 @@ No matching dupe → no bubble.
 | Field | Default | What it does |
 |---|---|---|
 | `EnableEvents` | `true` | Master switch for the event/voting system. |
+| `StartAfterCycles` | `0` | Cycles to wait after the colony loads before the **first** vote auto-starts, giving the streamer time to prepare. `0` = don't auto-start; begin manually with the pause-menu button. The button still works to start earlier. Counted from load, so it works on both new and loaded colonies. |
 | `UseTwitchPolls` | `false` | `false` = count chat votes; `true` = native Twitch poll (needs the poll scopes + Affiliate/Partner). |
 | `VotingSeconds` | `60` | Length of the voting window. |
 | `VoteDelay` | `540` | Seconds between one vote ending and the next starting (auto-restart). Default ≈ 9 minutes. The countdown **pauses while the game is paused.** |

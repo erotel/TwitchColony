@@ -28,6 +28,7 @@ namespace TwitchColony.Config
 
         // ---- Voting ----
         public bool EnableEvents = true;      // Master switch for the event/voting system.
+        public int StartAfterCycles = 0;      // Cycles to wait after the colony loads before the FIRST vote auto-starts (0 = manual, use the pause-menu button). Gives the streamer time to prepare.
         public bool UseTwitchPolls = false;   // Use native Twitch polls instead of counting chat votes.
         public int VotingSeconds = 60;        // Voting window length.
         public float VoteDelay = 540f;        // Seconds between the end of one vote and the start of the next (auto-restart).

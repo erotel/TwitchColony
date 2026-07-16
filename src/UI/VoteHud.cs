@@ -127,6 +127,13 @@ namespace TwitchColony.UI
                 return "<color=#8CE04A>WINNER</color>\n" + vc.LastWinnerName;
             }
 
+            // Idle with a cycle-based auto-start pending: tell the streamer voting is coming.
+            if (vc.State == VoteController.VotingState.NotStarted && vc.CyclesUntilStart > 0)
+            {
+                return "<size=80%>Twitch votes start in " + vc.CyclesUntilStart + " cycle" +
+                       (vc.CyclesUntilStart == 1 ? "" : "s") + "</size>";
+            }
+
             return null;
         }
     }
