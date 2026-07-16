@@ -121,28 +121,19 @@ Notes:
    Output lands in `dist/TwitchColony/` (one `TwitchColony.dll` + the two yaml files).
    No wine, no ILRepack — the mod references the game DLLs instead of bundling them.
 
-## Installing / testing (Windows machine with the game)
+## Installing & configuring
 
-Copy the **contents** of `dist/TwitchColony/` into:
+See **[INSTALL.md](INSTALL.md)** for the full guide — Workshop and manual install, where
+`config.json` lives, copy-paste config recipes (bubbles only / chat voting / chat
+announcements / native polls), a field-by-field reference, OAuth token scopes, and
+troubleshooting.
 
-```
-…\Documents\Klei\OxygenNotIncluded\mods\Local\TwitchColony\
-```
-
-`mod_info.yaml` must sit directly in that folder. Enable the mod in-game, load a colony,
-and watch `…\Documents\Klei\OxygenNotIncluded\Player.log` for lines tagged `[TwitchColony]`.
-
-## Configuration
-
-On first run the mod writes `config.json` to
-`…\Documents\Klei\OxygenNotIncluded\config_twitchcolony\`. Edit it with the game closed.
-Key fields: `Channel`, `Nick`, `OauthToken`, `BubblePrefix`, `EnableEvents`,
-`UseTwitchPolls`, `VotingSeconds`, `OptionsPerVote`. See `src/Config/ModConfig.cs` for all
-fields and defaults.
-
-Anonymous chat read (bubbles + chat voting) works with just `Channel` set. Native Twitch
-polls need a token with `channel:manage:polls` + `channel:read:polls` (Affiliate/Partner),
-or the Twitch CLI mock via the `*Override` fields.
+Short version for a manual/local install: copy the **contents** of `dist/TwitchColony/`
+(`TwitchColony.dll` + both yaml files) into
+`…\Documents\Klei\OxygenNotIncluded\mods\Local\TwitchColony\` (with `mod_info.yaml`
+directly in that folder), enable the mod, load a colony, set `Channel` in the generated
+`config.json`, and click **"Start Twitch Votes"** in the pause menu. Watch
+`…\Documents\Klei\OxygenNotIncluded\Player.log` for lines tagged `[TwitchColony]`.
 
 ## Layout
 
