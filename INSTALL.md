@@ -146,6 +146,11 @@ result. Requires an Affiliate/Partner channel and a token with
 `ClientIdOverride` / `BroadcasterIdOverride` empty — they're only for the CLI mock (see
 the developer notes in `CLAUDE.md`).
 
+> **Affiliate/Partner only.** Even with a valid poll token, Twitch only lets
+> **Affiliate/Partner** channels create polls; on a regular account the poll call fails with
+> `403` and nothing opens. If you're not there yet, use Recipe 2 (chat voting) instead. See
+> [§5](#5-getting-an-oauth-token) for the full explanation.
+
 ---
 
 ## 4. Full configuration reference
@@ -227,6 +232,14 @@ token to copy. Pick the one matching what you want to do:
 
 &nbsp;→ adds `channel:read:polls` + `channel:manage:polls` on top. Use this to run **native
 Twitch polls** (`UseTwitchPolls`, Affiliate/Partner only). Covers chat too.
+
+> **Getting the poll token ≠ being allowed to run polls.** Twitch grants the poll *scopes*
+> to **any** account, so this link succeeds even for a regular streamer — but the actual
+> "create poll" API call only works on an **Affiliate or Partner** channel. What decides it
+> is your **account status, not the token**: an Affiliate/Partner token runs polls fine; a
+> non-Affiliate token authorizes but Twitch rejects the poll with `403 Forbidden` ("channel
+> is not a partner or affiliate"), which the mod logs to `Player.log`. Until you're
+> Affiliate, use chat voting (`UseTwitchPolls: false`) — it works for everyone.
 
 After you click **Authorize**, Twitch sends you to the mod's login page, which shows the
 token — copy it into `OauthToken` (no `oauth:` prefix), and set `Nick` to the account you
