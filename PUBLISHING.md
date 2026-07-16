@@ -7,6 +7,22 @@ and the store copy so a re-upload is repeatable.
 > You need the **Steam version** of the game and a Steam account. Workshop upload is not
 > possible on the headless build server — do this on the Windows machine with the game.
 
+## 0. Enable developer mode (required — this is what shows the publish button)
+
+The Workshop publish/manage buttons only appear when the game is in **developer mode**.
+Without it, a mod in `Dev\` shows up but has **no upload button** — this is the usual reason
+"there's no button".
+
+Create an **empty** file named exactly `debug_enable.txt` in the game's save folder:
+
+```
+Documents\Klei\OxygenNotIncluded\debug_enable.txt
+```
+
+(the same folder as `Player.log` and `config_twitchcolony\`, **not** inside `mods\`). Watch
+the extension — it must end in `.txt` once, not `debug_enable.txt.txt`. Restart the game; the
+Mods screen now shows dev-mod management controls.
+
 ## 1. Put the built mod in the `Dev` folder
 
 Build (`./build.sh`) so `dist/TwitchColony/` holds `TwitchColony.dll`, `mod_info.yaml`,
