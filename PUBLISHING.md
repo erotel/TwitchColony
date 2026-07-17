@@ -68,28 +68,59 @@ re-publish. Same Workshop item, new build.
 **Description** (Steam BBCode):
 
 ```
-[b]Twitch Colony[/b] connects your Oxygen Not Included colony to your Twitch chat.
+[b]Twitch Colony[/b] hands your Oxygen Not Included colony over to your Twitch chat.
 
 [b]What it does[/b]
 [list]
 [*][b]Chat bubbles[/b] — a viewer's message pops up as a speech bubble above the duplicant whose name matches their Twitch nick.
-[*][b]Event voting[/b] — chat votes on which colony event fires next, either by typing in chat (!vote 1/2/3) or via a native Twitch poll.
-[*][b]70+ events[/b] — stress spikes & relief, instant builds/digs/research, floods & element dumps, critter rain, turbo/slow/sleepy dupes, a surprise box, heal/cure/blackout and more.
+[*][b]Event voting[/b] — chat votes on what happens to your colony next, either by typing in chat (!vote 1/2/3) or in a native Twitch poll.
+[*][b]73 events[/b] — stress spikes and group therapy, instant builds/digs/research, floods and element dumps, raining critters, turbo/sleepy dupes, care packages, blackouts, heat waves… up to lava, if you allow it.
+[*][b]Critter adoption[/b] — a viewer types !adopt and a critter is named after them, with their nick on a tag under it. Their chat then bubbles above their critter.
+[*][b]Sub celebrations[/b] — a NEW SUB banner and the whole colony stops to cheer.
 [/list]
+
+[b]You decide how mean chat can be[/b]
+Every event is tagged with how much it can hurt, from harmless to deadly. Set the ceiling and chat simply cannot cross it — pick "up to costly" and nobody dies, however hard they vote for it. The danger can also ramp up as the colony ages, so your first cycles are safe while you get set up.
 
 [b]Getting started[/b]
 [list]
-[*]Enable the mod and load a colony.
-[*]Set your channel in the config file it creates (config_twitchcolony/config.json).
-[*]Open the pause menu and click "Start Twitch Votes".
+[*]Enable the mod, open [b]Mods[/b] and click the [b]gear icon[/b] next to Twitch Colony.
+[*]Type in your channel name. That's the only required setting.
+[*]Load a colony, open the pause menu and click "Start Twitch Votes" — or have it start on its own after a few cycles.
 [/list]
-Anonymous chat reading (bubbles + chat voting) needs no login at all. Native Twitch polls need an Affiliate/Partner account. Full setup, config reference and a one-click token link are in the INSTALL guide on GitHub.
+Bubbles and chat voting work [b]anonymously — no login, no token, nothing to set up[/b]. A token is only needed if you want the bot to talk in chat or to run native Twitch polls (those also need an Affiliate/Partner account). Full setup and a one-click token link are in the INSTALL guide on GitHub.
 
-[b]Other modders[/b] can add their own events via a small public API — see the GitHub README.
+[b]For mod authors[/b]
+Your mod can add its own events to the vote pool, and it doesn't have to depend on this one: the API library reflects into Twitch Colony at runtime and does nothing when it isn't installed, so your mod still works for players without it. Guide, library and a working example: https://github.com/erotel/TwitchColony/blob/main/MODDING.md
 
-[b]Independent mod[/b] inspired by asquared31415's Twitch Integration. Written from scratch; no code or assets from the original are reused. See CREDITS on GitHub.
+[b]Independent mod[/b] inspired by asquared31415's Twitch Integration. Written from scratch; no code or assets from the original are reused. Thanks to Sgt_Imalas for the review that shaped the modding API. See CREDITS on GitHub.
 
-Source & docs: https://github.com/erotel/TwitchColony
+Source, docs & issues: https://github.com/erotel/TwitchColony
+```
+
+**Change notes for the 1.4.0 update** (the uploader asks for these separately from the description
+— they're what subscribers see in their update feed):
+
+```
+[b]Settings are in the game now[/b] — Mods → the gear icon next to Twitch Colony. Channel, bubbles, voting, adoption and subs, all in one screen. Your old config.json is imported automatically; editing files still works if you prefer.
+
+[b]You control how dangerous chat can get[/b] — every event is tagged from harmless to deadly, and you set the ceiling chat can never cross. It can also ramp up with cycles, so the first cycles stay safe while you get set up. On by default; turn it off for the old free-for-all.
+
+[b]Your OAuth token moved[/b] to its own file (mods/config/TwitchColony/token.txt) and is deliberately not on the settings screen — a token shown on stream is a password shown on stream. An existing token is moved for you.
+
+[b]Other mods can add events[/b] — there's a proper modding API now, and add-ons using it don't force players to install this mod. See MODDING.md on GitHub.
+
+[b]Fixes[/b]
+[list]
+[*]The mod applied its Harmony patches twice — this caused the duplicate chat connection and the doubled pause-menu button.
+[*]Starting a second colony without restarting the game left voting dead and the vote button greyed out.
+[*]A vote left running when you went back to the main menu used to finish there and fire its event into nothing.
+[*]The bot now disconnects from chat when you leave a colony.
+[*]A viewer who already has a duplicant can no longer adopt a critter as well.
+[*]A config.json with a typo in it no longer costs you your settings.
+[/list]
+
+Thanks to Sgt_Imalas for the review that shaped the modding API, and for spotting the double patching.
 ```
 
 **Suggested tags:** `Twitch`, `Interaction`, `Overlay`/`UI`, `Events`, `All DLCs` (mark it
