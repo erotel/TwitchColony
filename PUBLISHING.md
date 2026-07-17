@@ -98,7 +98,7 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
-**Change notes for the 1.4.3 update.** The Workshop is still on 1.3.0, so this covers everything
+**Change notes for the 1.4.4 update.** The Workshop is still on 1.3.0, so this covers everything
 since — use this one and ignore the older blocks below.
 
 ```
@@ -120,6 +120,7 @@ since — use this one and ignore the older blocks below.
 [*]The vote button greys out the moment you click it.
 [*]A viewer who already has a duplicant can no longer adopt a critter as well.
 [*]A config.json with a typo in it no longer costs you your settings.
+[*]Chat bubbles and critter name tags no longer draw on top of the pause menu.
 [/list]
 
 [b]Mods can add their own events now[/b] — there's a proper modding API, and add-ons using it don't force players to install this mod. See MODDING.md on GitHub.
@@ -171,6 +172,7 @@ Thanks to Sgt_Imalas, who found all three while hooking his own events up to the
 [*]The bot now disconnects from chat when you leave a colony.
 [*]A viewer who already has a duplicant can no longer adopt a critter as well.
 [*]A config.json with a typo in it no longer costs you your settings.
+[*]Chat bubbles and critter name tags no longer draw on top of the pause menu.
 [/list]
 
 Thanks to Sgt_Imalas for the review that shaped the modding API, and for spotting the double patching.
