@@ -13,6 +13,17 @@ original is credited here as the inspiration and out of respect for that work.
 
 If you enjoyed the concept, please also check out and support the original author.
 
+## What the licence covers
+
+The MIT licence in [LICENSE](LICENSE) covers **Twitch Colony's own code and documentation**, which
+is everything in this repository. It does not, and cannot, cover:
+
+- **Oxygen Not Included** and the game assemblies the mod is built against. Those are Klei
+  Entertainment's and are not distributed here — you copy them out of your own install into `lib/`
+  (see the README).
+- **PLib**, which is merged into `TwitchColony.dll` and carries its own MIT licence — reproduced
+  below, as that licence requires.
+
 ## Bundled third-party code
 
 **PLib** by **Peter Han** — <https://github.com/peterhaneve/ONIMods> — powers the in-game
