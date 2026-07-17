@@ -1,8 +1,11 @@
 # Credits
 
-**Twitch Colony** is an independent mod. It was **inspired by** the original
-[Twitch Integration](https://github.com/asquared31415/ONITwitch) mod by
-**asquared31415**, which pioneered Twitch-driven events in Oxygen Not Included.
+**Twitch Colony** is an independent mod, released under the **MIT licence** (see
+[LICENSE](LICENSE)) — use it, fork it, merge the modding API into your own mod, just keep the
+copyright notice.
+
+It was **inspired by** the original [Twitch Integration](https://github.com/asquared31415/ONITwitch)
+mod by **asquared31415**, which pioneered Twitch-driven events in Oxygen Not Included.
 
 This project does **not** reuse the original mod's source code or assets. Its code,
 architecture, class layout, and any assets are our own, written from scratch. The

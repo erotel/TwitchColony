@@ -18,7 +18,8 @@ kicks off the first round; after that each round auto-restarts after `VoteDelay`
 
 ## Events
 
-The colony ships with ~50 voteable events, grouped by file in `src/Events/`:
+The colony ships with 73 voteable events, grouped by file in `src/Events/`. Each is tagged with a
+danger level (harmless → deadly) that the streamer can cap; see [INSTALL.md](INSTALL.md):
 
 - **Duplicant amounts** (`ColonyEvents.cs`) — stress spike / relief, feast, exhaustion, full
   bladder, free research, kill a random dupe.
@@ -143,3 +144,11 @@ src/                      the mod itself -> TwitchColony.dll
   UI/SpeechBubbles.cs     chat speech bubbles
 Api/                      merge-lib for add-on authors -> TwitchColony.Api.dll
 ```
+
+## Licence
+
+**MIT** — see [LICENSE](LICENSE). Use it, fork it, merge the modding API into your own mod; just
+keep the copyright notice.
+
+PLib by Peter Han is merged into `TwitchColony.dll` and is MIT too; its notice is in
+[CREDITS.md](CREDITS.md). The game's own assemblies belong to Klei and aren't distributed here.

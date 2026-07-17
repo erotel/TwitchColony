@@ -167,6 +167,18 @@ don't need one.
 
 ---
 
+## Licence
+
+Twitch Colony, `TwitchColony.Api.dll` and the example add-on are **MIT licensed** — so yes, you may
+merge the API library into your mod and ship it, including on the Workshop, commercially, whatever.
+Keep the copyright notice somewhere (a line in your credits or mod description is plenty). Full text
+in [LICENSE](LICENSE).
+
+Worth saying out loud, because it bites people in this ecosystem: source being public on GitHub is
+**not** permission to use it. A repository with no licence is "all rights reserved" and you may not
+legally copy from it, however open it looks. That's the situation with the original Twitch
+Integration mod, and it's why this one has a licence file.
+
 ## Versioning
 
 `TwitchColonyApi` looks the bridge up by its exact signature. If a future Twitch Colony makes a
