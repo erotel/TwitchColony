@@ -7,10 +7,14 @@ using UnityEngine;
 namespace TwitchColony.Events
 {
     /// <summary>
-    ///     Lets Twitch viewers "adopt" a critter with a chat command (default <c>!adopt</c>): a random
-    ///     un-adopted critter is renamed to the viewer's Twitch nick. Named critters then also show chat
-    ///     bubbles, exactly like duplicants (see <see cref="SpeechBubbles"/>). Independent implementation.
-    ///     All methods here touch game objects and MUST be called on the main thread.
+    ///     Names critters after Twitch viewers. Two ways in: a viewer types the adopt command, or —
+    ///     if auto-adopt is on — the mod quietly names free critters after random recent chatters on
+    ///     a timer. Nearest the printing pod first, working outward. A named critter shows chat
+    ///     bubbles just like a duplicant (see <see cref="SpeechBubbles"/>).
+    ///
+    ///     Independent implementation. Everything here touches game objects and MUST run on the main
+    ///     thread. Names are display-only and do not survive save/load — critters have no persistent
+    ///     name in the base game; auto-adopt re-populates a fresh colony instead.
     /// </summary>
     public static class CritterAdoption
     {
@@ -19,14 +23,35 @@ namespace TwitchColony.Events
         private static readonly Dictionary<string, GameObject> AdoptedByUser =
             new Dictionary<string, GameObject>();
 
+        // Recent chat participants (lower-case nick -> last time we saw them), the pool auto-adopt
+        // names critters after. Pruned to a rolling window so we name active chatters, not someone
+        // who said one word an hour ago.
+        private static readonly Dictionary<string, float> RecentChatters = new Dictionary<string, float>();
+        private const float ChatterWindowSeconds = 15f * 60f;
+
+        private static float nextAutoAdoptAt;
+
         /// <summary>Optional sink for posting confirmations to Twitch chat (wired from the IRC client).</summary>
         public static System.Action<string> ChatSay;
 
-        /// <summary>Clear adoptions (called when a colony loads/unloads; old critters are gone).</summary>
+        /// <summary>Clear all state (called when a colony loads/unloads; old critters are gone).</summary>
         public static void Reset()
         {
             AdoptedByUser.Clear();
+            RecentChatters.Clear();
             CritterNameTags.Clear();
+            // Give the streamer a moment after load before the first automatic naming.
+            nextAutoAdoptAt = Time.unscaledTime + 10f;
+        }
+
+        /// <summary>Remember that someone spoke, so auto-adopt has a pool to name critters after.</summary>
+        public static void NoteChatter(string user)
+        {
+            var key = (user ?? "").Trim().ToLowerInvariant();
+            if (!string.IsNullOrEmpty(key))
+            {
+                RecentChatters[key] = Time.unscaledTime;
+            }
         }
 
         /// <summary>If the chat line is the adopt command, adopt a free critter for the viewer.</summary>
@@ -44,7 +69,38 @@ namespace TwitchColony.Events
                 return;
             }
 
-            Adopt(user.Trim(), cfg);
+            AdoptManual(user.Trim(), cfg);
+        }
+
+        /// <summary>
+        ///     Called every frame from the vote controller. When auto-adopt is on and the timer is up,
+        ///     names one free critter after one free chatter. One per interval keeps it from flooding.
+        /// </summary>
+        public static void Tick()
+        {
+            var cfg = ModConfig.Instance;
+            if (!cfg.EnableCritterAdopt || !cfg.EnableAutoAdopt || Time.unscaledTime < nextAutoAdoptAt)
+            {
+                return;
+            }
+
+            // Reschedule whatever happens, so a colony with no free critters or an empty chat doesn't
+            // retry every single frame.
+            nextAutoAdoptAt = Time.unscaledTime + Mathf.Max(5, cfg.AutoAdoptIntervalSeconds);
+
+            var user = PickFreeChatter();
+            if (user == null)
+            {
+                return; // nobody in chat who doesn't already have a body
+            }
+
+            var critter = PickFreeCritter();
+            if (critter == null)
+            {
+                return; // nothing left to name
+            }
+
+            NameCritter(user, critter, cfg, auto: true);
         }
 
         /// <summary>The critter a viewer currently owns, or null. Used by the speech bubbles.</summary>
@@ -59,23 +115,12 @@ namespace TwitchColony.Events
             return null;
         }
 
-        private static void Adopt(string user, ModConfig cfg)
+        private static void AdoptManual(string user, ModConfig cfg)
         {
-            var key = user.ToLowerInvariant();
-
-            // Keep the critter a viewer already owns (if still alive).
-            if (AdoptedByUser.TryGetValue(key, out var existing) && existing != null)
+            if (AlreadyHasBody(user))
             {
-                return;
-            }
-
-            // One viewer, one body in the colony: if a duplicant already carries this nick, the
-            // viewer is "in" the colony already and their chat bubbles over that dupe. Letting them
-            // grab a critter too would give them two of everything.
-            if (SpeechBubbles.FindMinionByName(user) != null)
-            {
-                Log.Info($"{user} already has a duplicant; not adopting a critter.");
-                if (cfg.AnnounceInChat)
+                // Owns a critter already, or is a duplicant: one viewer, one body in the colony.
+                if (SpeechBubbles.FindMinionByName(user) != null && cfg.AnnounceInChat)
                 {
                     ChatSay?.Invoke($"{user} is already a duplicant here!");
                 }
@@ -83,40 +128,82 @@ namespace TwitchColony.Events
                 return;
             }
 
-            var critter = PickUnadopted();
+            var critter = PickFreeCritter();
             if (critter == null)
             {
                 Log.Info($"{user} tried to adopt, but no free critter is available.");
+                if (cfg.AnnounceInChat)
+                {
+                    ChatSay?.Invoke($"Sorry {user}, no free critters right now!");
+                }
+
                 return;
             }
 
+            NameCritter(user, critter, cfg, auto: false);
+        }
+
+        /// <summary>The naming itself, shared by manual and automatic adoption.</summary>
+        private static void NameCritter(string user, GameObject critter, ModConfig cfg, bool auto)
+        {
             var sel = critter.GetComponent<KSelectable>();
             if (sel == null)
             {
                 return;
             }
 
-            // Read the species name before we overwrite it, for the announcement.
             var species = Util.StripTextFormatting(sel.GetName() ?? "critter").Trim();
 
             sel.SetName(user); // plain nick, so bubble matching by name is straightforward
-            AdoptedByUser[key] = critter;
+            AdoptedByUser[user.ToLowerInvariant()] = critter;
 
-            Log.Info($"{user} adopted a {species}.");
-            SpeechBubbles.ShowRaw(critter.transform, "adopted by " + user); // quick visual cue over the critter
+            Log.Info($"{user} {(auto ? "was given" : "adopted")} a {species}.");
+            SpeechBubbles.ShowRaw(critter.transform, "adopted by " + user);
             if (cfg.ShowAdoptedNameTag)
             {
-                CritterNameTags.Show(critter.transform, user); // persistent name label under the critter
+                CritterNameTags.Show(critter.transform, user);
             }
 
             if (cfg.AnnounceInChat)
             {
-                ChatSay?.Invoke($"{user} adopted a {species}!");
+                ChatSay?.Invoke(auto
+                    ? $"{user} has been given a {species}! Say hi \\o/"
+                    : $"{user} adopted a {species}!");
             }
         }
 
-        /// <summary>Pick a random living critter that nobody has adopted yet, or null if none free.</summary>
-        private static GameObject PickUnadopted()
+        /// <summary>True if this viewer already has a critter or a duplicant carrying their nick.</summary>
+        private static bool AlreadyHasBody(string user)
+        {
+            return FindAdoptedCritter(user) != null || SpeechBubbles.FindMinionByName(user) != null;
+        }
+
+        /// <summary>A random recent chatter who doesn't already have a body, or null.</summary>
+        private static string PickFreeChatter()
+        {
+            var cutoff = Time.unscaledTime - ChatterWindowSeconds;
+            var free = new List<string>();
+
+            foreach (var pair in new List<KeyValuePair<string, float>>(RecentChatters))
+            {
+                if (pair.Value < cutoff)
+                {
+                    RecentChatters.Remove(pair.Key); // aged out of the window
+                }
+                else if (!AlreadyHasBody(pair.Key))
+                {
+                    free.Add(pair.Key);
+                }
+            }
+
+            return free.Count == 0 ? null : free[UnityEngine.Random.Range(0, free.Count)];
+        }
+
+        /// <summary>
+        ///     The free critter nearest the printing pod, so naming fills in from the base outward
+        ///     instead of tagging something off in a far corner nobody's watching. Null if none free.
+        /// </summary>
+        private static GameObject PickFreeCritter()
         {
             var taken = new HashSet<GameObject>();
             foreach (var kv in AdoptedByUser)
@@ -133,13 +220,15 @@ namespace TwitchColony.Events
                 return null;
             }
 
-            var candidates = new List<GameObject>();
+            var pods = PrintingPods();
+            GameObject best = null;
+            var bestDistance = float.MaxValue;
+
             foreach (var brain in brains)
             {
-                // Only critters (not duplicant brains).
                 if (!(brain is CreatureBrain))
                 {
-                    continue;
+                    continue; // critters only, not duplicant brains
                 }
 
                 var go = brain.gameObject;
@@ -148,15 +237,61 @@ namespace TwitchColony.Events
                     continue;
                 }
 
-                candidates.Add(go);
+                var distance = NearestPodDistance(go.transform.position, pods);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = go;
+                }
             }
 
-            if (candidates.Count == 0)
+            return best;
+        }
+
+        private static List<Vector3> PrintingPods()
+        {
+            var pods = new List<Vector3>();
+            try
             {
-                return null;
+                var items = Components.Telepads?.Items;
+                if (items != null)
+                {
+                    foreach (var pad in items)
+                    {
+                        if (pad != null)
+                        {
+                            pods.Add(pad.transform.position);
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warn("Couldn't read the printing pod position: " + e.Message);
             }
 
-            return candidates[UnityEngine.Random.Range(0, candidates.Count)];
+            return pods;
+        }
+
+        /// <summary>Distance to the closest pod, or 0 when there are none (so order stays stable).</summary>
+        private static float NearestPodDistance(Vector3 position, List<Vector3> pods)
+        {
+            if (pods.Count == 0)
+            {
+                return 0f;
+            }
+
+            var best = float.MaxValue;
+            foreach (var pod in pods)
+            {
+                var d = (position - pod).sqrMagnitude;
+                if (d < best)
+                {
+                    best = d;
+                }
+            }
+
+            return best;
         }
     }
 }

@@ -243,6 +243,9 @@ namespace TwitchColony.Voting
 
             var cfg = ModConfig.Instance;
 
+            // Auto-adoption runs independently of voting — it should tick even in "bubbles only" mode.
+            CritterAdoption.Tick();
+
             // "Bubbles only" mode (events disabled): park the machine back to idle.
             if (!cfg.EnableEvents)
             {

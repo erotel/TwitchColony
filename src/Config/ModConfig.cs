@@ -119,6 +119,16 @@ namespace TwitchColony.Config
         [Option("Show name tag", "Show a permanent name label under each adopted critter.", CAT_ADOPT)]
         public bool ShowAdoptedNameTag { get; set; } = true;
 
+        [Option("Auto-adopt from chat", "Without waiting for anyone to type the command, quietly name " +
+            "free critters after random people from chat — nearest the printing pod first, working " +
+            "outward. Stops when critters or chatters run out.", CAT_ADOPT)]
+        public bool EnableAutoAdopt { get; set; } = true;
+
+        [Option("Auto-adopt every (seconds)", "Pause between automatic namings, so a busy chat doesn't " +
+            "get the whole ranch named in one go.", CAT_ADOPT)]
+        [Limit(5, 600)]
+        public int AutoAdoptIntervalSeconds { get; set; } = 45;
+
         // ---- Voting ----
         [Option("Enable events & voting", "Master switch for the whole event/voting system.", CAT_VOTING)]
         public bool EnableEvents { get; set; } = true;

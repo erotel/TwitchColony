@@ -219,13 +219,20 @@ A bubble appears only when a live duplicant's name matches the chatter's nick (c
 ### Critter adoption
 
 Viewers can "adopt" a critter — it gets renamed to their Twitch nick, and from then on their chat
-messages also pop up as bubbles above that critter, just like duplicants.
+messages also pop up as bubbles above that critter, just like duplicants. The mod can also hand
+critters out on its own to keep the ranch full of names.
 
 | Field | Default | What it does |
 |---|---|---|
-| `EnableCritterAdopt` | `true` | Master switch for the adopt command. |
-| `AdoptCommand` | `"!adopt"` | A viewer types this in chat to adopt a random free (un-adopted) critter. One critter per viewer; if none are free, nothing happens. With `AnnounceInChat` + a login, the bot confirms in chat. |
+| `EnableCritterAdopt` | `true` | Master switch for adoption (both the command and auto-adopt below). |
+| `AdoptCommand` | `"!adopt"` | A viewer types this in chat to adopt the nearest free critter. One critter per viewer; a viewer who already has a critter or a duplicant is turned away. With `AnnounceInChat` + a login, the bot confirms in chat. |
 | `ShowAdoptedNameTag` | `true` | Show a small persistent name label under each adopted critter (the owner's nick), like a nameplate. Set `false` to keep only the chat bubbles. |
+| `EnableAutoAdopt` | `true` | Without anyone typing the command, the mod names free critters after random recent chatters on a timer — **nearest the printing pod first, working outward** — until critters or chatters run out. Starts a few seconds after a colony loads. |
+| `AutoAdoptIntervalSeconds` | `45` | Seconds between automatic namings, so a busy chat doesn't get the whole ranch named at once. |
+
+> **Note:** critter names are display-only and **don't survive a save/load** — the base game has no
+> persistent name for critters. Auto-adopt simply re-populates a reloaded colony from your current
+> chat, so it fills back in on its own.
 
 ### Voting
 

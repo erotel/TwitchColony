@@ -61,6 +61,9 @@ namespace TwitchColony
                 // IRC callback runs on a background thread; hop to the main thread for game/UI.
                 MainThread.Run(() =>
                 {
+                    // Every message makes the sender a candidate for auto-adoption.
+                    CritterAdoption.NoteChatter(msg.User);
+
                     if (cfg.EnableBubbles)
                     {
                         SpeechBubbles.TryShow(msg.User, msg.Text);
