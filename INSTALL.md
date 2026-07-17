@@ -271,15 +271,19 @@ too: it only picks from what chat could have voted for anyway.
 
 ### Twitch subs
 
-When a viewer subscribes, resubscribes, or gifts a sub, the HUD shows a **"NEW SUB" banner** and the
-**duplicants cheer** (clap / thumbs-up / sing) — a pure celebration, no gameplay change. These arrive
-over the normal chat stream — **no Helix API, scopes, or extra login needed** (the channel just has to
-have subs, i.e. Affiliate/Partner). Works even on the anonymous connection.
+When a viewer subscribes, resubscribes, or gifts a sub, the HUD shows a **"NEW SUB" banner**, a
+**🎉 floats over the duplicants** for a few seconds, and they **cheer** (clap / thumbs-up / sing) —
+a pure celebration, no gameplay change. These arrive over the normal chat stream — **no Helix API,
+scopes, or extra login needed** (the channel just has to have subs, i.e. Affiliate/Partner). Works
+even on the anonymous connection.
 
 | Field | Default | What it does |
 |---|---|---|
-| `EnableSubRewards` | `true` | Banner + duplicant cheer on each sub / resub / gifted sub. |
+| `EnableSubRewards` | `true` | Banner + 🎉 bubble + duplicant cheer on each sub / resub / gifted sub. |
 | `SubRewardCooldownSeconds` | `12` | Minimum gap between celebrations, so a sub-train / mass gift can't restart every dupe's emote dozens of times. |
+| `SubCelebrateBubbleSeconds` | `10` | How long the 🎉 bubble stays over the duplicants — longer than the banner, so a sub is unmistakable. `0` turns just the bubble off. |
+| `EnableSubTestCommand` | `false` | **File-only, not in the settings screen.** When `true`, typing `SubTestCommand` in chat fires the whole sub celebration — for trying it out without a real sub. Leave it off on stream so viewers can't set it off. |
+| `SubTestCommand` | `"!sub"` | The chat command that triggers a test celebration when `EnableSubTestCommand` is on. |
 
 ### Twitch Helix (native polls — advanced)
 

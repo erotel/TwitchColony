@@ -188,6 +188,18 @@ namespace TwitchColony.Config
         [Limit(0, 120)]
         public float SubRewardCooldownSeconds { get; set; } = 12f;
 
+        [Option("Sub emoji duration", "How long the 🎉 bubble stays over the duplicants when someone " +
+            "subs. Longer than the banner, so it's unmistakable. 0 turns the bubble off.", CAT_SUBS,
+            Format = "F0")]
+        [Limit(0, 30)]
+        public float SubCelebrateBubbleSeconds { get; set; } = 10f;
+
+        // Test aid, deliberately file-only and off by default: with it on, typing SubTestCommand in
+        // chat fires the whole sub celebration as if a real sub came in. Not in the settings UI —
+        // it's for you while testing, not something a viewer should find.
+        public bool EnableSubTestCommand { get; set; } = false;
+        public string SubTestCommand { get; set; } = "!sub";
+
         // ---- Twitch Helix (native polls; overrides only needed for the CLI mock) ----
         public string HelixBaseUrl { get; set; } = "https://api.twitch.tv/helix";
         public string ClientIdOverride { get; set; } = ""; // Only for the Twitch CLI mock; empty = read from token validation.

@@ -75,6 +75,14 @@ namespace TwitchColony
                     {
                         CritterAdoption.TryHandle(msg.User, msg.Text);
                     }
+
+                    // Test aid (off unless switched on in config.json): lets you fire the whole sub
+                    // celebration by typing the command, instead of waiting for a real sub.
+                    if (cfg.EnableSubTestCommand && !string.IsNullOrEmpty(cfg.SubTestCommand) &&
+                        (msg.Text ?? "").Trim().Equals(cfg.SubTestCommand, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        SubRewards.TriggerTest();
+                    }
                 });
             };
             client.OnSub += sub =>

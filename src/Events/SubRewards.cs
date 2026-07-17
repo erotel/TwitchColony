@@ -41,6 +41,7 @@ namespace TwitchColony.Events
 
             VoteHud.Flash(BuildBanner(sub), 6f);
             CheerAllDupes();
+            CelebrateOverDupes();
 
             if (cfg.AnnounceInChat)
             {
@@ -61,6 +62,42 @@ namespace TwitchColony.Events
             }
 
             return "<color=#C287FF>★ NEW SUB ★</color>\n" + line2;
+        }
+
+        /// <summary>Float a party popper over every duplicant for a while, so a sub is unmistakable.</summary>
+        private static void CelebrateOverDupes()
+        {
+            var seconds = ModConfig.Instance.SubCelebrateBubbleSeconds;
+            if (seconds <= 0f)
+            {
+                return;
+            }
+
+            var sprite = IconBubbles.SubCelebrate;
+            if (sprite == null)
+            {
+                return; // icon missing: the banner and the cheer still happened
+            }
+
+            var items = Components.LiveMinionIdentities?.Items;
+            if (items == null)
+            {
+                return;
+            }
+
+            foreach (var identity in items)
+            {
+                if (identity != null)
+                {
+                    IconBubbles.Show(identity.transform, sprite, seconds);
+                }
+            }
+        }
+
+        /// <summary>Run the whole celebration on demand, for the chat test command. See ModConfig.</summary>
+        public static void TriggerTest()
+        {
+            Handle(new SubNotice { Display = "Test", MsgId = "sub" });
         }
 
         /// <summary>Make every living duplicant play a random celebratory emote (clap / cheer / sing).</summary>

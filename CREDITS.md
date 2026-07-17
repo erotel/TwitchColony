@@ -60,6 +60,12 @@ DEALINGS IN THE SOFTWARE.
   he explained why our first attempt could never have worked from another assembly. He also spotted
   that we were calling `PatchAll` twice.
 
+## Bundled assets
+
+The party-popper icon shown over duplicants on a sub (`assets/sub_celebrate.png`) is rendered from
+the 🎉 glyph of **Noto Color Emoji** by the Noto project, licensed under the **SIL Open Font License
+1.1**. <https://github.com/googlefonts/noto-emoji>
+
 ## Contributors
 
 - **Martin Zatloukal** — author, design, and testing.

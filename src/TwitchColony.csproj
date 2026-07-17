@@ -27,6 +27,14 @@
     <Compile Include="$(MSBuildProjectDirectory)/../Shared/**/*.cs" LinkBase="Shared" />
   </ItemGroup>
 
+  <!-- Icons ship inside the DLL, so there's no loose file to lose. LogicalName is the exact string
+       IconBubbles.LoadEmbedded asks for. -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildProjectDirectory)/../assets/sub_celebrate.png">
+      <LogicalName>TwitchColony.sub_celebrate.png</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
     <!-- PLib: in-game mod options UI. Merged into our DLL below (see the ILRepack target). -->
