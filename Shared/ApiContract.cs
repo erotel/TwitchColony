@@ -27,6 +27,17 @@ namespace TwitchColony.Api
     /// </summary>
     internal delegate bool ShowBannerDelegate(string message, float seconds);
 
+    /// <summary>
+    ///     Banner that pans the camera to a moving thing when clicked. orthographicSize is the zoom
+    ///     to arrive at; 0 or less keeps whatever zoom the streamer is on.
+    /// </summary>
+    internal delegate bool ShowBannerAtTargetDelegate(string message, float seconds,
+        UnityEngine.GameObject panTo, float orthographicSize);
+
+    /// <summary>Banner that pans the camera to a fixed spot when clicked. Same zoom rule.</summary>
+    internal delegate bool ShowBannerAtPositionDelegate(string message, float seconds,
+        UnityEngine.Vector3 panTo, float orthographicSize);
+
     /// <summary>Speech bubble above a game object.</summary>
     internal delegate bool ShowBubbleDelegate(UnityEngine.GameObject target, string text);
 

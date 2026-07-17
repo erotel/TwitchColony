@@ -29,11 +29,19 @@ namespace TwitchColony.Api
     {
         private const string LogPrefix = "[TwitchColony.Api] ";
 
+        /// <summary>Zoom value meaning "don't touch the zoom, the streamer picked it".</summary>
+        public const float KeepZoom = 0f;
+
+        /// <summary>Close enough to see one thing clearly. The default when you point at an object.</summary>
+        public const float CloseZoom = 10f;
+
         private static bool resolved;
         private static MethodInfo registerMethod;
         private static MethodInfo unregisterMethod;
         private static MethodInfo triggerMethod;
         private static MethodInfo bannerMethod;
+        private static MethodInfo bannerAtTargetMethod;
+        private static MethodInfo bannerAtPositionMethod;
         private static MethodInfo bubbleMethod;
         private static int installedVersion;
 
@@ -195,6 +203,69 @@ namespace TwitchColony.Api
         }
 
         /// <summary>
+        ///     A banner the streamer can click to look at whatever it's about — the camera pans to
+        ///     the object, keeping their zoom. It follows the object, so a moving one still works.
+        ///
+        ///     <code>
+        ///     TwitchColonyApi.ShowBanner("&lt;b&gt;Something is loose in the base!&lt;/b&gt;", 8f, critter);
+        ///     </code>
+        ///
+        ///     Half the value of a warning is "…and it's over there", and the streamer shouldn't have
+        ///     to go hunting. The banner says "click to look" so they know it's there.
+        /// </summary>
+        /// <param name="message">Keep it short — it's a banner, not a paragraph.</param>
+        /// <param name="seconds">How long it stays up. Clamped to 1–30.</param>
+        /// <param name="panTo">Where to take them. Nothing pans if it's null or gets destroyed.</param>
+        /// <param name="orthographicSize">
+        ///     Zoom to arrive at — smaller is closer, and it's clamped to what the game allows.
+        ///     Defaults to zooming in on the thing, since panning to a critter the streamer is zoomed
+        ///     out from just centres a dot. Pass <see cref="KeepZoom"/> to leave their zoom alone.
+        /// </param>
+        /// <returns>true if it was shown; false if Twitch Colony isn't installed. Never throws.</returns>
+        public static bool ShowBanner(string message, float seconds, UnityEngine.GameObject panTo,
+            float orthographicSize = CloseZoom)
+        {
+            return Banner(bannerAtTargetMethod, message, seconds, panTo, orthographicSize);
+        }
+
+        /// <summary>Same, but for a fixed spot rather than an object — a cell you flooded, say.</summary>
+        /// <param name="message">Keep it short — it's a banner, not a paragraph.</param>
+        /// <param name="seconds">How long it stays up. Clamped to 1–30.</param>
+        /// <param name="panTo">The world position to pan to when clicked.</param>
+        /// <param name="orthographicSize">
+        ///     Zoom to arrive at. Defaults to <see cref="KeepZoom"/> — for a place rather than a
+        ///     thing, only you know how much of it the streamer needs to see.
+        /// </param>
+        /// <returns>true if it was shown; false if Twitch Colony isn't installed. Never throws.</returns>
+        public static bool ShowBanner(string message, float seconds, UnityEngine.Vector3 panTo,
+            float orthographicSize = KeepZoom)
+        {
+            return Banner(bannerAtPositionMethod, message, seconds, panTo, orthographicSize);
+        }
+
+        private static bool Banner(MethodInfo method, string message, float seconds, object panTo,
+            float orthographicSize)
+        {
+            Resolve();
+            if (method == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return (bool)method.Invoke(null,
+                    new[] { message, (object)seconds, panTo, orthographicSize });
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning(LogPrefix + "Could not show banner: " +
+                                             (e.InnerException ?? e).Message);
+                return false;
+            }
+        }
+
+        /// <summary>
         ///     Show a speech bubble above something — the same bubble viewers' chat messages appear
         ///     in. Works over anything with a transform: a duplicant, a critter, a building.
         ///
@@ -301,6 +372,15 @@ namespace TwitchColony.Api
                 bannerMethod = bridge.GetMethod(ApiContract.ShowBannerMethodName,
                     BindingFlags.Public | BindingFlags.Static, null,
                     ParametersOf(typeof(ShowBannerDelegate)), null);
+
+                // Overloads of the same name; the delegates pick the right one by signature.
+                bannerAtTargetMethod = bridge.GetMethod(ApiContract.ShowBannerMethodName,
+                    BindingFlags.Public | BindingFlags.Static, null,
+                    ParametersOf(typeof(ShowBannerAtTargetDelegate)), null);
+
+                bannerAtPositionMethod = bridge.GetMethod(ApiContract.ShowBannerMethodName,
+                    BindingFlags.Public | BindingFlags.Static, null,
+                    ParametersOf(typeof(ShowBannerAtPositionDelegate)), null);
 
                 bubbleMethod = bridge.GetMethod(ApiContract.ShowBubbleMethodName,
                     BindingFlags.Public | BindingFlags.Static, null,

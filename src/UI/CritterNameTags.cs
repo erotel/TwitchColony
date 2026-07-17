@@ -96,7 +96,7 @@ namespace TwitchColony.UI
             Object.DontDestroyOnLoad(go);
             canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 29500; // under the chat bubbles (30000), over the vote HUD
+            UiLayer.PutBelowGameUi(canvas, 2); // under the chat bubbles, over the vote HUD
 
             // Same as the bubbles: match the game's UI scale rather than inventing our own.
             UiScale.Track(go.AddComponent<CanvasScaler>());

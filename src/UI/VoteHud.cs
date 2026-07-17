@@ -21,13 +21,87 @@ namespace TwitchColony.UI
 
         // A transient banner (e.g. "NEW SUB") that takes over the panel for a few seconds.
         private static string flashText;
+        private static GameObject flashPanTarget;
+        private static Vector3 flashPanPosition;
+        private static float flashPanOrtho;
+        private static bool flashCanPan;
         private static float flashUntil;
 
         /// <summary>Show a short-lived banner in the HUD, independent of voting (e.g. a sub celebration).</summary>
         public static void Flash(string message, float seconds)
         {
-            flashText = message;
+            Flash(message, seconds, null, Vector3.zero, false, 0f);
+        }
+
+        /// <summary>
+        ///     Show a banner the streamer can click to look at whatever it's telling them about.
+        ///     Without somewhere to go the banner is just an announcement; half the time the useful
+        ///     part is "…and it's over there".
+        /// </summary>
+        /// <param name="target">Followed if given, so a moving thing still works. May be null.</param>
+        /// <param name="position">Used when there's no target.</param>
+        /// <param name="canPan">Whether either of the above is meaningful.</param>
+        /// <param name="orthographicSize">Zoom to arrive at; 0 or less keeps the streamer's own.</param>
+        public static void Flash(string message, float seconds, GameObject target, Vector3 position,
+            bool canPan, float orthographicSize)
+        {
+            flashPanTarget = target;
+            flashPanPosition = position;
+            flashPanOrtho = orthographicSize;
+            flashCanPan = canPan && (target != null || position != Vector3.zero);
+
+            // Say so, or nobody will think to click it.
+            flashText = flashCanPan
+                ? message + "\n<color=#8A8A8A>click to look</color>"
+                : message;
             flashUntil = Time.unscaledTime + seconds;
+        }
+
+        /// <summary>Pan to whatever the banner is about. Called when the panel is clicked.</summary>
+        internal static void PanToFlash()
+        {
+            if (!flashCanPan || Time.unscaledTime >= flashUntil)
+            {
+                return; // nothing to look at, or the banner has already gone
+            }
+
+            try
+            {
+                var camera = CameraController.Instance;
+                if (camera == null)
+                {
+                    return;
+                }
+
+                // A destroyed target means whatever it was about is gone; the stored position is
+                // still better than nothing.
+                var pos = flashPanTarget != null ? flashPanTarget.transform.position : flashPanPosition;
+                camera.SetTargetPos(pos, ZoomFor(camera), true);
+            }
+            catch (System.Exception e)
+            {
+                Log.Warn("Banner pan failed: " + e.Message);
+            }
+        }
+
+        /// <summary>
+        ///     The zoom to arrive at. Whoever raised the banner can ask for one — worth doing, since
+        ///     panning to a critter the streamer is zoomed out from just centres a dot. Zero means
+        ///     they didn't care, so keep the zoom the streamer chose.
+        ///
+        ///     Clamped to what the game itself allows, so a bad number from an add-on can't leave the
+        ///     camera somewhere it can't get back from.
+        /// </summary>
+        private static float ZoomFor(CameraController camera)
+        {
+            var current = camera.baseCamera != null ? camera.baseCamera.orthographicSize : 12f;
+            if (flashPanOrtho <= 0f)
+            {
+                return current;
+            }
+
+            var min = camera.minOrthographicSize > 0f ? camera.minOrthographicSize : 2f;
+            return Mathf.Clamp(flashPanOrtho, min, CameraController.DEFAULT_MAX_ORTHO_SIZE);
         }
 
         public static void Ensure()
@@ -48,7 +122,7 @@ namespace TwitchColony.UI
             DontDestroyOnLoad(go);
             canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 29000;
+            UiLayer.PutBelowGameUi(canvas, 3); // behind the bubbles and tags, and behind any menu
             UiScale.Track(go.AddComponent<CanvasScaler>()); // follow the game's UI scale setting
             go.AddComponent<GraphicRaycaster>();
 
@@ -80,6 +154,8 @@ namespace TwitchColony.UI
             // gap is.
             var cfg = ModConfig.Instance;
             prt.anchoredPosition = new Vector2(cfg.VoteHudX, cfg.VoteHudY);
+
+            panel.AddComponent<BannerClick>(); // a banner with a place to go pans there when clicked
 
             var drag = panel.AddComponent<WindowDrag>();
             drag.Moved = position =>

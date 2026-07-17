@@ -74,13 +74,25 @@ namespace TwitchColonyExampleAddon
             // Borrow Twitch Colony's own on-screen furniture, so an add-on's events can talk to the
             // streamer the same way the built-in ones do.
             var who = voters.Length > 0 ? string.Join(", ", voters) : "nobody in particular";
-            TwitchColonyApi.ShowBanner($"<b>Hello from another mod!</b>\nbrought to you by {who}", 5f);
 
             // A bubble needs something to float over. Any game object with a transform will do.
             var dupe = FirstDuplicant();
             if (dupe != null)
             {
                 TwitchColonyApi.ShowBubble(dupe, "an add-on made me say this");
+            }
+
+            if (dupe != null)
+            {
+                // Pass the duplicant and the banner becomes clickable: it pans the camera to them.
+                // Worth doing whenever your event happens somewhere in particular — the streamer
+                // shouldn't have to go looking for what you just told them about.
+                TwitchColonyApi.ShowBanner($"<b>Hello from another mod!</b>\nbrought to you by {who}",
+                    5f, dupe);
+            }
+            else
+            {
+                TwitchColonyApi.ShowBanner($"<b>Hello from another mod!</b>\nbrought to you by {who}", 5f);
             }
         }
 

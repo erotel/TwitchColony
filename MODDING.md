@@ -199,12 +199,22 @@ TwitchColonyApi.ShowBanner("<b>Nobody expects the Spanish Inquisition!</b>", 6f)
 
 // Above a specific thing — same bubble viewers' chat messages appear in.
 TwitchColonyApi.ShowBubble(dupe.gameObject, "well, this is unexpected");
+
+// A banner that takes the streamer to the scene of the crime when they click it.
+TwitchColonyApi.ShowBanner("<b>Something is loose in the base!</b>", 8f, critter);
+TwitchColonyApi.ShowBanner("<b>The pump room is flooding</b>", 8f, floodPosition);
 ```
 
 Use the banner to warn the streamer what just landed on them, or to land the punchline of an event
 whose joke needs words. The bubble works over anything with a transform — duplicant, critter,
 building — and follows the streamer's own bubble settings (font, size, how long it lingers). One
 bubble per object: a second replaces the first.
+
+**Give the banner a `GameObject` or a `Vector3` and it becomes clickable**: it says "click to look"
+and pans the camera there, keeping the streamer's zoom. Pass the object rather than its position
+when the thing can move — the camera follows wherever it ended up. Half the value of "something is
+loose in the base" is *where*, and the streamer shouldn't have to go hunting for it while chat
+laughs.
 
 TextMeshPro rich text works in both (`<color=#C287FF>`, `<b>`, newlines). **Emoji don't** — see below.
 

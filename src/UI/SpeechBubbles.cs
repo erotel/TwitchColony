@@ -161,7 +161,7 @@ namespace TwitchColony.UI
             UnityEngine.Object.DontDestroyOnLoad(go);
             canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 30000;
+            UiLayer.PutBelowGameUi(canvas, 1); // frontmost of ours, still behind the game's screens
 
             // Scale exactly like the game's own UI, so bubbles sit right at any resolution and
             // follow the player's UI scale setting. (This used to scale by resolution alone, which

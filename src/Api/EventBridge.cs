@@ -35,11 +35,15 @@ namespace TwitchColony.Api
             UnregisterEventDelegate unregister = UnregisterEvent;
             TriggerEventDelegate trigger = TriggerEvent;
             ShowBannerDelegate banner = ShowBanner;
+            ShowBannerAtTargetDelegate bannerAtTarget = ShowBanner;
+            ShowBannerAtPositionDelegate bannerAtPosition = ShowBanner;
             ShowBubbleDelegate bubble = ShowBubble;
             GC.KeepAlive(register);
             GC.KeepAlive(unregister);
             GC.KeepAlive(trigger);
             GC.KeepAlive(banner);
+            GC.KeepAlive(bannerAtTarget);
+            GC.KeepAlive(bannerAtPosition);
             GC.KeepAlive(bubble);
         }
 
@@ -179,6 +183,49 @@ namespace TwitchColony.Api
 
                 VoteHud.Ensure();
                 VoteHud.Flash(message, UnityEngine.Mathf.Clamp(seconds, 1f, 30f));
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.Warn($"ShowBanner threw: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Banner that pans the camera to <paramref name="panTo"/> when the streamer clicks it.
+        ///     Tracks the object, so it still works if the thing moves or the banner lingers.
+        /// </summary>
+        /// <param name="orthographicSize">
+        ///     Zoom to arrive at — smaller is closer, clamped to what the game allows. 0 or less
+        ///     keeps the streamer's current zoom.
+        /// </param>
+        public static bool ShowBanner(string message, float seconds, UnityEngine.GameObject panTo,
+            float orthographicSize)
+        {
+            return Banner(message, seconds, panTo, UnityEngine.Vector3.zero, orthographicSize);
+        }
+
+        /// <summary>Banner that pans the camera to a fixed world position when clicked.</summary>
+        public static bool ShowBanner(string message, float seconds, UnityEngine.Vector3 panTo,
+            float orthographicSize)
+        {
+            return Banner(message, seconds, null, panTo, orthographicSize);
+        }
+
+        private static bool Banner(string message, float seconds, UnityEngine.GameObject target,
+            UnityEngine.Vector3 position, float orthographicSize)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(message))
+                {
+                    return false;
+                }
+
+                VoteHud.Ensure();
+                VoteHud.Flash(message, UnityEngine.Mathf.Clamp(seconds, 1f, 30f), target, position, true,
+                    orthographicSize);
                 return true;
             }
             catch (Exception e)
