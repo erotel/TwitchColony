@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TwitchColony.Events;
+using TwitchColony.UI;
 
 namespace TwitchColony.Api
 {
@@ -33,9 +34,13 @@ namespace TwitchColony.Api
             RegisterEventDelegate register = RegisterEvent;
             UnregisterEventDelegate unregister = UnregisterEvent;
             TriggerEventDelegate trigger = TriggerEvent;
+            ShowBannerDelegate banner = ShowBanner;
+            ShowBubbleDelegate bubble = ShowBubble;
             GC.KeepAlive(register);
             GC.KeepAlive(unregister);
             GC.KeepAlive(trigger);
+            GC.KeepAlive(banner);
+            GC.KeepAlive(bubble);
         }
 
         /// <summary>
@@ -145,6 +150,71 @@ namespace TwitchColony.Api
             catch (Exception e)
             {
                 Log.Warn($"TriggerEvent('{id}') threw: {e}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Show a banner across the top of the screen for a few seconds — the same one the mod
+        ///     uses to announce a vote winner or a new sub. For telling the streamer what just hit
+        ///     them, or landing the punchline of an event.
+        ///
+        ///     TextMeshPro rich text works (<c>&lt;color=#C287FF&gt;</c>, <c>&lt;b&gt;</c>, \n).
+        ///     Emoji don't — the game's fonts have none, and anything the font can't draw is dropped
+        ///     rather than shown as a box.
+        ///
+        ///     Main thread, colony loaded. A second banner replaces the first.
+        /// </summary>
+        /// <param name="message">What to show. Keep it short; it's a banner, not a paragraph.</param>
+        /// <param name="seconds">How long it stays, clamped to 1–30.</param>
+        /// <returns>true if it was shown.</returns>
+        public static bool ShowBanner(string message, float seconds)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(message))
+                {
+                    return false;
+                }
+
+                VoteHud.Ensure();
+                VoteHud.Flash(message, UnityEngine.Mathf.Clamp(seconds, 1f, 30f));
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.Warn($"ShowBanner threw: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Show a speech bubble above a game object — the same bubble chat messages appear in.
+        ///     Works on anything with a transform: a duplicant, a critter, a building.
+        ///
+        ///     It uses the streamer's bubble settings (font, size, how long it lingers), so it looks
+        ///     like part of the mod rather than something bolted on. One bubble per object: showing
+        ///     another replaces it. Emoji are dropped, as above.
+        ///
+        ///     Main thread, colony loaded.
+        /// </summary>
+        /// <param name="target">What to put it over. Ignored if null or destroyed.</param>
+        /// <param name="text">What it says.</param>
+        /// <returns>true if a bubble appeared.</returns>
+        public static bool ShowBubble(UnityEngine.GameObject target, string text)
+        {
+            try
+            {
+                if (target == null || string.IsNullOrEmpty(text))
+                {
+                    return false;
+                }
+
+                return SpeechBubbles.ShowRaw(target.transform, text) != null;
+            }
+            catch (Exception e)
+            {
+                Log.Warn($"ShowBubble threw: {e.Message}");
                 return false;
             }
         }

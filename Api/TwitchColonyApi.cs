@@ -33,6 +33,8 @@ namespace TwitchColony.Api
         private static MethodInfo registerMethod;
         private static MethodInfo unregisterMethod;
         private static MethodInfo triggerMethod;
+        private static MethodInfo bannerMethod;
+        private static MethodInfo bubbleMethod;
         private static int installedVersion;
 
         /// <summary>True when Twitch Colony is installed and speaking a version we understand.</summary>
@@ -154,6 +156,81 @@ namespace TwitchColony.Api
             }
         }
 
+        /// <summary>
+        ///     Show a banner across the top of the screen — the same one Twitch Colony announces vote
+        ///     winners and new subs with. Use it to warn the streamer what just landed on them, or to
+        ///     deliver the punchline of an event.
+        ///
+        ///     <code>
+        ///     TwitchColonyApi.ShowBanner("&lt;b&gt;Nobody expects the Spanish Inquisition!&lt;/b&gt;", 6f);
+        ///     </code>
+        ///
+        ///     TextMeshPro rich text works (<c>&lt;color=#RRGGBB&gt;</c>, <c>&lt;b&gt;</c>, newlines).
+        ///     Emoji don't: the game's fonts have none, so anything unrenderable is dropped rather
+        ///     than drawn as a hollow box. A second banner replaces the first.
+        ///
+        ///     Main thread, colony loaded.
+        /// </summary>
+        /// <param name="message">Keep it short — it's a banner, not a paragraph.</param>
+        /// <param name="seconds">How long it stays up. Clamped to 1–30.</param>
+        /// <returns>true if it was shown; false if Twitch Colony isn't installed. Never throws.</returns>
+        public static bool ShowBanner(string message, float seconds = 5f)
+        {
+            Resolve();
+            if (bannerMethod == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return (bool)bannerMethod.Invoke(null, new object[] { message, seconds });
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning(LogPrefix + "Could not show banner: " +
+                                             (e.InnerException ?? e).Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Show a speech bubble above something — the same bubble viewers' chat messages appear
+        ///     in. Works over anything with a transform: a duplicant, a critter, a building.
+        ///
+        ///     <code>
+        ///     TwitchColonyApi.ShowBubble(dupe.gameObject, "well, this is unexpected");
+        ///     </code>
+        ///
+        ///     It follows the streamer's own bubble settings (font, size, lifetime), so it looks like
+        ///     part of the mod. One bubble per object — showing another replaces it. Emoji are
+        ///     dropped, as with banners.
+        ///
+        ///     Main thread, colony loaded.
+        /// </summary>
+        /// <param name="target">What to float it above. Nothing happens if it's null or destroyed.</param>
+        /// <param name="text">What it says.</param>
+        /// <returns>true if a bubble appeared; false if Twitch Colony isn't installed. Never throws.</returns>
+        public static bool ShowBubble(UnityEngine.GameObject target, string text)
+        {
+            Resolve();
+            if (bubbleMethod == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return (bool)bubbleMethod.Invoke(null, new object[] { target, text });
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning(LogPrefix + "Could not show bubble: " +
+                                             (e.InnerException ?? e).Message);
+                return false;
+            }
+        }
+
         /// <summary>Remove an event you registered earlier. Returns true if it was there.</summary>
         public static bool UnregisterEvent(string id)
         {
@@ -220,6 +297,14 @@ namespace TwitchColony.Api
                 triggerMethod = bridge.GetMethod(ApiContract.TriggerMethodName,
                     BindingFlags.Public | BindingFlags.Static, null,
                     ParametersOf(typeof(TriggerEventDelegate)), null);
+
+                bannerMethod = bridge.GetMethod(ApiContract.ShowBannerMethodName,
+                    BindingFlags.Public | BindingFlags.Static, null,
+                    ParametersOf(typeof(ShowBannerDelegate)), null);
+
+                bubbleMethod = bridge.GetMethod(ApiContract.ShowBubbleMethodName,
+                    BindingFlags.Public | BindingFlags.Static, null,
+                    ParametersOf(typeof(ShowBubbleDelegate)), null);
 
                 if (registerMethod == null)
                 {

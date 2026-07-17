@@ -70,6 +70,38 @@ namespace TwitchColonyExampleAddon
 
             Debug.Log(Tag + $"Hello fired on cycle {cycle} via {source} with {votes} vote(s). " +
                       $"Voters: {(voters.Length > 0 ? string.Join(", ", voters) : "(none reported)")}");
+
+            // Borrow Twitch Colony's own on-screen furniture, so an add-on's events can talk to the
+            // streamer the same way the built-in ones do.
+            var who = voters.Length > 0 ? string.Join(", ", voters) : "nobody in particular";
+            TwitchColonyApi.ShowBanner($"<b>Hello from another mod!</b>\nbrought to you by {who}", 5f);
+
+            // A bubble needs something to float over. Any game object with a transform will do.
+            var dupe = FirstDuplicant();
+            if (dupe != null)
+            {
+                TwitchColonyApi.ShowBubble(dupe, "an add-on made me say this");
+            }
+        }
+
+        /// <summary>Any live duplicant, or null if the colony has none.</summary>
+        private static GameObject FirstDuplicant()
+        {
+            var minions = Components.LiveMinionIdentities?.Items;
+            if (minions == null)
+            {
+                return null;
+            }
+
+            foreach (var minion in minions)
+            {
+                if (minion != null)
+                {
+                    return minion.gameObject;
+                }
+            }
+
+            return null;
         }
     }
 }

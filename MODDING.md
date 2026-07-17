@@ -81,6 +81,10 @@ bool TwitchColonyApi.UnregisterEvent(string id);
 bool TwitchColonyApi.TriggerEvent(string id);     // fire one now, for testing — see below
 bool TwitchColonyApi.IsAvailable { get; }        // is Twitch Colony installed and talking to us?
 int  TwitchColonyApi.InstalledApiVersion { get; } // 0 when it isn't installed
+
+// On-screen messages — see "Talking to the streamer" below
+bool TwitchColonyApi.ShowBanner(string message, float seconds = 5f);
+bool TwitchColonyApi.ShowBubble(GameObject target, string text);
 ```
 
 - Call it **once**, from `OnLoad`. Registered events survive colony reloads.
@@ -183,6 +187,30 @@ the same call — but then you're back to a hard dependency. The merge-lib exist
 don't need one.
 
 ---
+
+## Talking to the streamer
+
+Your event can use Twitch Colony's own on-screen furniture, so it looks like part of the mod rather
+than something bolted on. Two shapes:
+
+```csharp
+// Across the top of the screen — same banner the mod announces vote winners and new subs with.
+TwitchColonyApi.ShowBanner("<b>Nobody expects the Spanish Inquisition!</b>", 6f);
+
+// Above a specific thing — same bubble viewers' chat messages appear in.
+TwitchColonyApi.ShowBubble(dupe.gameObject, "well, this is unexpected");
+```
+
+Use the banner to warn the streamer what just landed on them, or to land the punchline of an event
+whose joke needs words. The bubble works over anything with a transform — duplicant, critter,
+building — and follows the streamer's own bubble settings (font, size, how long it lingers). One
+bubble per object: a second replaces the first.
+
+TextMeshPro rich text works in both (`<color=#C287FF>`, `<b>`, newlines). **Emoji don't** — see below.
+
+Both take a `UnityEngine.GameObject` / plain values, which is safe for the same reason the rest of
+the API isn't: Unity's types come from the game's own assembly, so there's exactly one `GameObject`
+type at runtime. It's only types *we* compile that would have two identities.
 
 ## Testing your events without waiting for chat
 

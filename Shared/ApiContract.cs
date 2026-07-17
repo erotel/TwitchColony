@@ -20,6 +20,17 @@ namespace TwitchColony.Api
     internal delegate bool TriggerEventDelegate(string id);
 
     /// <summary>
+    ///     Banner across the top of the screen. Note the UnityEngine type in the sibling delegate
+    ///     below: Unity's types are safe to pass across, unlike ours. Both mods reference the same
+    ///     UnityEngine.CoreModule out of the game folder, so there is exactly one GameObject type at
+    ///     runtime — the two-identities problem only bites on types we compile ourselves.
+    /// </summary>
+    internal delegate bool ShowBannerDelegate(string message, float seconds);
+
+    /// <summary>Speech bubble above a game object.</summary>
+    internal delegate bool ShowBubbleDelegate(UnityEngine.GameObject target, string text);
+
+    /// <summary>
     ///     The exact names the merge-lib reflects for, and the version of the contract they follow.
     ///
     ///     This file is compiled into BOTH TwitchColony.dll and TwitchColony.Api.dll from the same
@@ -40,6 +51,8 @@ namespace TwitchColony.Api
         public const string RegisterMethodName = "RegisterEvent";
         public const string UnregisterMethodName = "UnregisterEvent";
         public const string TriggerMethodName = "TriggerEvent";
+        public const string ShowBannerMethodName = "ShowBanner";
+        public const string ShowBubbleMethodName = "ShowBubble";
         public const string VersionPropertyName = "ApiVersion";
 
         /// <summary>

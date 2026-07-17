@@ -114,7 +114,9 @@ namespace TwitchColony.UI
 
             if (show)
             {
-                text.text = content;
+                // Same reason as the speech bubbles: the game's fonts have no emoji, and a missing
+                // glyph draws as a hollow box. Rich-text markup is plain ASCII, so it survives.
+                text.text = Glyphs.KeepRenderable(content, text);
             }
         }
 

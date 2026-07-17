@@ -43,6 +43,11 @@
       <HintPath>$(LibFolder)/Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- KMonoBehaviour lives here, and MinionIdentity inherits from it — needed to touch .gameObject. -->
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>$(LibFolder)/Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="0Harmony">
       <HintPath>$(LibFolder)/0Harmony.dll</HintPath>
       <Private>false</Private>
