@@ -103,7 +103,7 @@ namespace TwitchColony.Events
             AdoptedByUser[key] = critter;
 
             Log.Info($"{user} adopted a {species}.");
-            SpeechBubbles.ShowRaw(critter.transform, "🐾 " + user); // quick visual cue over the critter
+            SpeechBubbles.ShowRaw(critter.transform, "adopted by " + user); // quick visual cue over the critter
             if (cfg.ShowAdoptedNameTag)
             {
                 CritterNameTags.Show(critter.transform, user); // persistent name label under the critter

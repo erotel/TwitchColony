@@ -32,6 +32,7 @@ namespace TwitchColony.Api
         private static bool resolved;
         private static MethodInfo registerMethod;
         private static MethodInfo unregisterMethod;
+        private static MethodInfo triggerMethod;
         private static int installedVersion;
 
         /// <summary>True when Twitch Colony is installed and speaking a version we understand.</summary>
@@ -116,6 +117,43 @@ namespace TwitchColony.Api
             }
         }
 
+        /// <summary>
+        ///     Fire an event right now by id, skipping the vote — for testing your events while you
+        ///     build them. Bind it to a key, call it from your debug menu, whatever suits.
+        ///
+        ///     <code>
+        ///     if (Input.GetKeyDown(KeyCode.F9)) TwitchColonyApi.TriggerEvent("mymod.confetti");
+        ///     </code>
+        ///
+        ///     It skips the vote, and with it the streamer's danger ceiling and your own condition,
+        ///     so don't wire it to anything a viewer can reach. Call it on the game's main thread,
+        ///     with a colony loaded.
+        /// </summary>
+        /// <param name="id">Id of a registered event — yours, or one of Twitch Colony's own.</param>
+        /// <returns>
+        ///     true if the event ran; false if Twitch Colony isn't installed or has no such id.
+        ///     Never throws.
+        /// </returns>
+        public static bool TriggerEvent(string id)
+        {
+            Resolve();
+            if (triggerMethod == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return (bool)triggerMethod.Invoke(null, new object[] { id });
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning(LogPrefix + "Could not trigger event '" + id + "': " +
+                                             (e.InnerException ?? e).Message);
+                return false;
+            }
+        }
+
         /// <summary>Remove an event you registered earlier. Returns true if it was there.</summary>
         public static bool UnregisterEvent(string id)
         {
@@ -176,6 +214,12 @@ namespace TwitchColony.Api
                 unregisterMethod = bridge.GetMethod(ApiContract.UnregisterMethodName,
                     BindingFlags.Public | BindingFlags.Static, null,
                     ParametersOf(typeof(UnregisterEventDelegate)), null);
+
+                // Added after v1 shipped, so an older Twitch Colony simply won't have it. Missing =
+                // TriggerEvent no-ops, rather than the whole API refusing to work.
+                triggerMethod = bridge.GetMethod(ApiContract.TriggerMethodName,
+                    BindingFlags.Public | BindingFlags.Static, null,
+                    ParametersOf(typeof(TriggerEventDelegate)), null);
 
                 if (registerMethod == null)
                 {

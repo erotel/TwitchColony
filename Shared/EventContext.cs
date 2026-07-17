@@ -40,6 +40,9 @@ namespace TwitchColony.Api
         /// <summary>Value of <see cref="Source"/> when the winner came from a native Twitch poll.</summary>
         public const string SourcePoll = "twitchPoll";
 
+        /// <summary>Value of <see cref="Source"/> when something fired the event directly, no vote involved.</summary>
+        public const string SourceDirect = "direct";
+
         /// <summary>Reads a string key, or <paramref name="fallback"/> if it's missing or another type.</summary>
         public static string GetString(object context, string key, string fallback = "")
         {

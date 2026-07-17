@@ -70,7 +70,7 @@ namespace TwitchColony.Events
         public override void Trigger()
         {
             Log.Info("Event: StressSpike");
-            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Stress, +25f, "😱");
+            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Stress, +25f, "aaah!");
         }
     }
 
@@ -83,7 +83,7 @@ namespace TwitchColony.Events
         public override void Trigger()
         {
             Log.Info("Event: StressRelief");
-            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Stress, -50f, "😌");
+            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Stress, -50f, "ahh");
         }
     }
 
@@ -96,7 +96,7 @@ namespace TwitchColony.Events
         public override void Trigger()
         {
             Log.Info("Event: Feast");
-            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Calories, +4000f, "🍖");
+            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Calories, +4000f, "yum!");
         }
     }
 
@@ -110,7 +110,7 @@ namespace TwitchColony.Events
         public override void Trigger()
         {
             Log.Info("Event: Exhaustion");
-            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Stamina, -50f, "😴");
+            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Stamina, -50f, "zzz");
         }
     }
 
@@ -124,7 +124,7 @@ namespace TwitchColony.Events
         public override void Trigger()
         {
             Log.Info("Event: FullBladder");
-            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Bladder, +100f, "🚽");
+            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Bladder, +100f, "gotta go!");
         }
     }
 
@@ -189,7 +189,7 @@ namespace TwitchColony.Events
             var victim = dupes[Random.Range(0, dupes.Count)];
             if (victim.TryGetComponent<Health>(out var health) && KillHealth != null)
             {
-                SpeechBubbles.ShowRaw(victim.transform, "💀");
+                SpeechBubbles.ShowRaw(victim.transform, "x_x");
                 KillHealth(health);
                 Log.Info($"KillDupe: killed '{victim.GetProperName()}'.");
             }

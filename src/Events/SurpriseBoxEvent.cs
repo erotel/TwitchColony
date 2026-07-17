@@ -89,7 +89,7 @@ namespace TwitchColony.Events
                         Destroy(countdownBubble);
                     }
 
-                    countdownBubble = UI.SpeechBubbles.ShowRaw(transform, "📦 " + secs);
+                    countdownBubble = UI.SpeechBubbles.ShowRaw(transform, "box " + secs);
                 }
 
                 return;
@@ -120,7 +120,7 @@ namespace TwitchColony.Events
                 }
             }
 
-            UI.SpeechBubbles.ShowRaw(transform, "🎉");
+            UI.SpeechBubbles.ShowRaw(transform, "yay!");
         }
 
         private void SpawnGift()

@@ -21,7 +21,7 @@ namespace TwitchColony.Events
             Log.Info("Event: Cheer");
             foreach (var identity in SafeMinions())
             {
-                SpeechBubbles.ShowRaw(identity.transform, "♥ Hurá! ♥");
+                SpeechBubbles.ShowRaw(identity.transform, "Hura!");
             }
         }
 

@@ -28,29 +28,48 @@ namespace TwitchColony
         private static readonly Color HoverColor = new Color32(0xA2, 0x56, 0xFF, 0xFF);
         private static readonly Color PressedColor = new Color32(0xB5, 0x67, 0xFF, 0xFF);
 
+        /// <summary>
+        ///     Set between the click and the vote actually starting a frame later. Without it the
+        ///     button springs back to enabled the moment we refresh it: RefreshButtons recomputes the
+        ///     state from "is a vote running?", and a frame after the click the answer is still no.
+        /// </summary>
+        private static bool startPending;
+
         private static void OnTwitchButtonPressed()
         {
-            // Disable right away so a double-click can't stack two votes.
-            TwitchButtonInfo.isEnabled = false;
-            if (PauseScreen.Instance != null)
+            if (startPending)
             {
-                PauseScreen.Instance.RefreshButtons();
+                return; // Already on its way; a second click must not stack another vote.
             }
+
+            startPending = true;
+            RefreshButtonState();
 
             // StartVote touches the game; run it next frame on the main thread.
             GameScheduler.Instance.ScheduleNextFrame(
                 "TwitchColony.StartVotes",
                 _ =>
                 {
-                    var started = VoteController.Ensure().StartVote();
-                    // If it didn't start (e.g. not enough events), re-enable so the streamer can retry.
-                    TwitchButtonInfo.isEnabled = !started;
-                    if (PauseScreen.Instance != null)
-                    {
-                        PauseScreen.Instance.RefreshButtons();
-                    }
+                    VoteController.Ensure().StartVote();
+                    // Whether it worked or not, the state now follows the controller: a started vote
+                    // keeps the button disabled, a failed one (no events to offer) re-enables it so
+                    // the streamer can try again.
+                    startPending = false;
+                    RefreshButtonState();
                 }
             );
+        }
+
+        /// <summary>Recompute the button's enabled state and push it to the screen if it's open.</summary>
+        private static void RefreshButtonState()
+        {
+            TwitchButtonInfo.isEnabled = !startPending &&
+                                         (VoteController.Instance == null || !VoteController.Instance.IsVoteActive);
+
+            if (PauseScreen.Instance != null)
+            {
+                PauseScreen.Instance.RefreshButtons();
+            }
         }
 
         /// <summary>Insert our button into the pause menu each time it is (re)built.</summary>
@@ -89,10 +108,11 @@ namespace TwitchColony
                     return;
                 }
 
-                if (VoteController.Instance != null)
-                {
-                    TwitchButtonInfo.isEnabled = !VoteController.Instance.IsVoteActive;
-                }
+                // startPending covers the frame between the click and the vote existing; without it
+                // this line would hand the button straight back to the streamer mid-click.
+                TwitchButtonInfo.isEnabled = !startPending &&
+                                             (VoteController.Instance == null ||
+                                              !VoteController.Instance.IsVoteActive);
 
                 // Create the purple style once (or if it was reset), and apply it to the button.
                 if (twitchButtonStyle == null ||

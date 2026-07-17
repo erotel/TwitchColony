@@ -78,6 +78,7 @@ bool TwitchColonyApi.RegisterEvent(
     string owner = null);
 
 bool TwitchColonyApi.UnregisterEvent(string id);
+bool TwitchColonyApi.TriggerEvent(string id);     // fire one now, for testing — see below
 bool TwitchColonyApi.IsAvailable { get; }        // is Twitch Colony installed and talking to us?
 int  TwitchColonyApi.InstalledApiVersion { get; } // 0 when it isn't installed
 ```
@@ -182,6 +183,30 @@ the same call — but then you're back to a hard dependency. The merge-lib exist
 don't need one.
 
 ---
+
+## Testing your events without waiting for chat
+
+Waiting out a vote to see whether your event works gets old fast. `TriggerEvent` fires one straight
+away by id:
+
+```csharp
+// In your mod's Update, behind a debug flag:
+if (Input.GetKeyDown(KeyCode.F9)) TwitchColonyApi.TriggerEvent("mymod.confetti");
+```
+
+It works on any registered id, including Twitch Colony's own (`"flood_water"`, `"kill_dupe"` …), and
+returns false if the id isn't registered or the mod isn't installed.
+
+It **skips the vote entirely**, which means it also skips the streamer's danger ceiling and your
+event's own condition — that's the point for testing, and the reason not to wire it to anything a
+viewer can reach. Call it on the main thread with a colony loaded.
+
+## A note on emoji
+
+The game's fonts have no emoji, and TextMeshPro draws a missing glyph as a hollow box. Anything the
+font can't render is dropped from a speech bubble rather than shown as a square, so if your event
+puts an emoji in a bubble, expect it to quietly vanish. Short words work; so does anything the game
+already displays elsewhere.
 
 ## Licence
 

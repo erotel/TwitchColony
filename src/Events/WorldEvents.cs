@@ -112,7 +112,7 @@ namespace TwitchColony.Events
         protected abstract SimHashes Element { get; }
         protected virtual float Mass => 1000f;
         protected virtual int Radius => 3;
-        protected virtual string Bubble => "🌊";
+        protected virtual string Bubble => "splash!";
 
         public override void Trigger()
         {
@@ -171,7 +171,7 @@ namespace TwitchColony.Events
         public override string DisplayName => "Flash flood (LAVA!)";
         protected override SimHashes Element => SimHashes.Magma;
         protected override float Mass => 200f;
-        protected override string Bubble => "🌋";
+        protected override string Bubble => "LAVA!";
     }
 
     public sealed class FloodGoldEvent : FloodEventBase
@@ -189,7 +189,7 @@ namespace TwitchColony.Events
         public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Flash flood (nuclear waste)";
         protected override SimHashes Element => SimHashes.NuclearWaste;
-        protected override string Bubble => "☢️";
+        protected override string Bubble => "waste!";
     }
 
     /// <summary>Base class for "pick a random element from a pool and spawn a 3×3 patch near a dupe".</summary>
@@ -294,7 +294,7 @@ namespace TwitchColony.Events
                     }
                 }
 
-                UI.SpeechBubbles.ShowRaw(dupe.transform, "💩");
+                UI.SpeechBubbles.ShowRaw(dupe.transform, "eww");
             }
         }
     }
@@ -317,7 +317,7 @@ namespace TwitchColony.Events
                     Cells.Place(cell, SimHashes.Methane, 25f);
                 }
 
-                UI.SpeechBubbles.ShowRaw(dupe.transform, "💨");
+                UI.SpeechBubbles.ShowRaw(dupe.transform, "pfff");
             }
         }
     }

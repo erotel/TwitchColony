@@ -301,6 +301,22 @@ namespace TwitchColony.UI
             {
                 if (label != null)
                 {
+                    // Viewers type emoji the game's font can't draw; without this they'd be boxes.
+                    // Measure and wrap the text we're actually going to show, not the original.
+                    text = Glyphs.KeepRenderable(text, label);
+                    if (string.IsNullOrEmpty(text))
+                    {
+                        // An emoji-only message: nothing left that this font can draw. Don't leave an
+                        // empty box hanging over the duplicant — expire a fresh bubble, and leave an
+                        // existing one showing whatever it already said.
+                        if (label.text.Length == 0)
+                        {
+                            dieAt = 0f;
+                        }
+
+                        return;
+                    }
+
                     // Short text stays on one snug line; only wrap (at a capped width) when it's too wide.
                     var unconstrained = label.GetPreferredValues(text);
                     if (textLayout != null && unconstrained.x > maxWidth)

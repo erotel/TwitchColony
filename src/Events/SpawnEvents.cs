@@ -179,7 +179,7 @@ namespace TwitchColony.Events
                 if (dupes[i].TryGetComponent<MinionResume>(out var resume))
                 {
                     resume.ForceAddSkillPoint();
-                    UI.SpeechBubbles.ShowRaw(dupes[i].transform, "⭐");
+                    UI.SpeechBubbles.ShowRaw(dupes[i].transform, "+skill");
                 }
             }
         }

@@ -16,6 +16,9 @@ namespace TwitchColony.Api
     /// <summary>Same idea for the unregister call.</summary>
     internal delegate bool UnregisterEventDelegate(string id);
 
+    /// <summary>And for firing an event on demand, which is how add-on authors test theirs.</summary>
+    internal delegate bool TriggerEventDelegate(string id);
+
     /// <summary>
     ///     The exact names the merge-lib reflects for, and the version of the contract they follow.
     ///
@@ -36,6 +39,7 @@ namespace TwitchColony.Api
 
         public const string RegisterMethodName = "RegisterEvent";
         public const string UnregisterMethodName = "UnregisterEvent";
+        public const string TriggerMethodName = "TriggerEvent";
         public const string VersionPropertyName = "ApiVersion";
 
         /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TwitchColony.Events;
 
 namespace TwitchColony.Api
@@ -31,8 +32,10 @@ namespace TwitchColony.Api
         {
             RegisterEventDelegate register = RegisterEvent;
             UnregisterEventDelegate unregister = UnregisterEvent;
+            TriggerEventDelegate trigger = TriggerEvent;
             GC.KeepAlive(register);
             GC.KeepAlive(unregister);
+            GC.KeepAlive(trigger);
         }
 
         /// <summary>
@@ -99,6 +102,63 @@ namespace TwitchColony.Api
                 // and could stop their mod loading entirely.
                 Log.Warn($"Failed to register an event from {Describe(owner)}: {e}");
                 return false;
+            }
+        }
+
+        /// <summary>
+        ///     Fire an event right now by id, skipping the vote. Meant for testing your own events
+        ///     while you build them — bind it to a key, call it from a debug menu, whatever.
+        ///
+        ///     It bypasses the vote, and with it the streamer's danger ceiling and the event's own
+        ///     condition, so don't wire it to anything a viewer can reach. It counts as "just
+        ///     happened" for the group cooldown, exactly as if chat had voted for it.
+        ///
+        ///     Must be called on the game's main thread, and only with a colony loaded.
+        /// </summary>
+        /// <param name="id">Id of a registered event, yours or a built-in one.</param>
+        /// <returns>true if the event was found and run; false if there's no such id.</returns>
+        public static bool TriggerEvent(string id)
+        {
+            try
+            {
+                var ev = EventRegistry.ById(id);
+                if (ev == null)
+                {
+                    Log.Warn($"TriggerEvent: no event with id '{id}'.");
+                    return false;
+                }
+
+                var context = new Dictionary<string, object>
+                {
+                    { EventContext.EventId, ev.Id },
+                    { EventContext.Cycle, CurrentCycle() },
+                    { EventContext.Source, EventContext.SourceDirect },
+                    { EventContext.VoteCount, 0 },
+                    { EventContext.Voters, new string[0] },
+                };
+
+                Log.Info($"TriggerEvent: firing '{ev.Id}' directly.");
+                EventRegistry.NoteTriggered(ev);
+                ev.Trigger(context);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.Warn($"TriggerEvent('{id}') threw: {e}");
+                return false;
+            }
+        }
+
+        private static int CurrentCycle()
+        {
+            try
+            {
+                var clock = GameClock.Instance;
+                return clock != null ? clock.GetCycle() : -1;
+            }
+            catch
+            {
+                return -1;
             }
         }
 

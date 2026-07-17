@@ -20,7 +20,7 @@ namespace TwitchColony.Events
         public override void Trigger()
         {
             Log.Info("Event: HealAll");
-            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.HitPoints, +1000f, "❤️");
+            DupeUtil.ApplyAmountToAll(Db.Get().Amounts.HitPoints, +1000f, "healed");
         }
     }
 
@@ -47,7 +47,7 @@ namespace TwitchColony.Events
                     catch { /* ignore individual cure failures */ }
                 }
 
-                UI.SpeechBubbles.ShowRaw(dupe.transform, "💊");
+                UI.SpeechBubbles.ShowRaw(dupe.transform, "cured");
             }
         }
     }
@@ -61,7 +61,7 @@ namespace TwitchColony.Events
         {
             Log.Info("Event: Nirvana");
             DupeUtil.ApplyAmountToAll(Db.Get().Amounts.Stress, -1000f); // clamps to 0
-            ModEffects.ApplyToAll(ModEffects.Zen, "🧘");
+            ModEffects.ApplyToAll(ModEffects.Zen, "ommm");
         }
     }
 
@@ -259,7 +259,7 @@ namespace TwitchColony.Events
             foreach (var dupe in DupeUtil.Live())
             {
                 dupe.transform.position = pos + new Vector3(Random.Range(-1.5f, 1.5f), 0f, 0f);
-                UI.SpeechBubbles.ShowRaw(dupe.transform, "📣");
+                UI.SpeechBubbles.ShowRaw(dupe.transform, "here!");
             }
         }
     }
@@ -282,7 +282,7 @@ namespace TwitchColony.Events
                 }
 
                 dupe.transform.position = Grid.CellToPosCBC(cell, Grid.SceneLayer.Move);
-                UI.SpeechBubbles.ShowRaw(dupe.transform, "🌀");
+                UI.SpeechBubbles.ShowRaw(dupe.transform, "whee!");
             }
         }
 
@@ -322,7 +322,7 @@ namespace TwitchColony.Events
                 try
                 {
                     driver.StopChore();
-                    UI.SpeechBubbles.ShowRaw(dupe.transform, "❓");
+                    UI.SpeechBubbles.ShowRaw(dupe.transform, "?!");
                 }
                 catch (System.Exception e)
                 {

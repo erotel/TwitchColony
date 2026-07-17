@@ -187,7 +187,7 @@ namespace TwitchColony.Events
         public override void Trigger()
         {
             Log.Info("Event: TurboDupes");
-            ModEffects.ApplyToAll(ModEffects.Turbo, "⚡");
+            ModEffects.ApplyToAll(ModEffects.Turbo, "zoom!");
         }
     }
 }
