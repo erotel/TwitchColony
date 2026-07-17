@@ -71,7 +71,10 @@ namespace TwitchColony.Api
         /// </param>
         /// <param name="groupId">
         ///     Optional. Events that feel alike should share a group: when one fires, the whole group
-        ///     is less likely to be offered for the next few votes.
+        ///     is less likely to be offered for the next few votes. Unlike <paramref name="id"/>,
+        ///     group names are a shared namespace: "flood" puts your events in the same bucket as
+        ///     Twitch Colony's floods (often what you want), while "mymod.floods" keeps them damping
+        ///     only each other.
         /// </param>
         /// <param name="weight">How often it's offered relative to other events.</param>
         /// <param name="danger">

@@ -126,6 +126,12 @@ group is pushed down the draw order for the next few votes, so chat isn't offere
 of the same thing in a row. All the built-in floods share `"flood"`, for example. `null` = the
 event is damped on its own after it fires.
 
+Unlike `id`, group names are a **shared namespace** — and that's a choice you should make on
+purpose. Name your group `"flood"` and your floods land in the same damping bucket as the built-in
+ones: fire yours, and Twitch Colony's are less likely for a few votes too. That's often exactly
+right — a flood is a flood, and the point is not to offer three in a row. If you'd rather your
+events only damp each other, prefix the group like you do the id (`"mymod.floods"`).
+
 **`weight`** — how often it's offered relative to others: `Rare` (1), `Uncommon` (2), `Common` (4,
 the default), `VeryCommon` (8). `Never` (0) registers the event but keeps it out of the draw —
 useful when you trigger it yourself.

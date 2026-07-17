@@ -47,6 +47,8 @@ namespace TwitchColony.Api
         /// <param name="groupId">
         ///     Optional. Events sharing a group are pushed down the draw order together once one of
         ///     them fires, so near-identical events don't come up back to back. null = no group.
+        ///     Group names are a shared namespace across mods, unlike <paramref name="id"/>: an
+        ///     add-on using "flood" joins the built-in floods' bucket on purpose or by accident.
         /// </param>
         /// <param name="weight">Relative chance of being offered. See EventWeight; 0 = never drawn.</param>
         /// <param name="danger">How much it can hurt the colony. See EventDanger.</param>
