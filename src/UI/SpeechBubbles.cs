@@ -90,7 +90,9 @@ namespace TwitchColony.UI
             return Spawn(target, text, ModConfig.Instance);
         }
 
-        private static GameObject FindMinionByName(string user)
+        /// <summary>The live duplicant carrying this nick, or null. Also used to stop a viewer who
+        /// already has a duplicant from adopting a critter as well.</summary>
+        internal static GameObject FindMinionByName(string user)
         {
             var items = Components.LiveMinionIdentities?.Items;
             if (items == null)

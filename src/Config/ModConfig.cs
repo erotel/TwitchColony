@@ -1,81 +1,220 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using PeterHan.PLib.Options;
 using UnityEngine;
 
 namespace TwitchColony.Config
 {
     /// <summary>
-    ///     All user-tunable settings for the mod, persisted as JSON next to the game's mod config.
+    ///     All user-tunable settings for the mod, persisted as JSON and editable in-game via
+    ///     Mods → Twitch Colony → the gear icon (PLib options dialog).
     ///     This is our own independent implementation — field names and layout are our design.
+    ///
+    ///     PLib's options dialog only reads public PROPERTIES, which is why everything here is an
+    ///     auto-property rather than a field. The JSON key names are unchanged, so existing config
+    ///     files keep working.
+    ///
+    ///     Deliberately NOT exposed in the in-game dialog: OauthToken (a chat token is a password,
+    ///     and this mod's users are literally screen-sharing while they play — see the notice
+    ///     property below) and the Helix dev overrides (only used for the Twitch CLI mock).
     /// </summary>
-    public sealed class ModConfig
+    [ModInfo("https://github.com/erotel/TwitchColony")]
+    [ConfigFile(IndentOutput: true, SharedConfigLocation: true)]
+    public sealed class ModConfig : IOptions
     {
+        // PLib collects categories into a SortedList, so they are shown in alphabetical order of
+        // these strings — declaration order is ignored. The numbers force the order we want, with
+        // the connection settings (the ones you must fill in) first instead of buried in the middle.
+        private const string CAT_TWITCH = "1. Twitch connection";
+        private const string CAT_BUBBLES = "2. Chat bubbles";
+        private const string CAT_ADOPT = "3. Critter adoption";
+        private const string CAT_VOTING = "4. Voting";
+        private const string CAT_SUBS = "5. Twitch subs";
+
         // ---- Twitch connection ----
-        public string Channel = "";           // Twitch channel (lowercase login) to join.
-        public string Nick = "";              // Bot/user login for the chat connection (empty = anonymous read-only).
-        public string OauthToken = "";        // Chat OAuth token WITHOUT the "oauth:" prefix (empty = anonymous).
+        [Option("Channel", "Twitch channel to join (your channel login, lowercase).", CAT_TWITCH)]
+        public string Channel { get; set; } = "";
+
+        [Option("Bot nick", "Login of the account the token belongs to. Leave EMPTY to read chat " +
+            "anonymously — anonymous mode shows bubbles and counts chat votes, but cannot post to chat.",
+            CAT_TWITCH)]
+        public string Nick { get; set; } = "";
+
+        /// <summary>
+        ///     Static notice rendered by PLib as a text block (see TextBlockOptionsEntry: a read-only
+        ///     LocText property that returns null). The token itself stays out of this dialog on
+        ///     purpose — see the class docs.
+        ///
+        ///     Keep the lines SHORT and break them by hand. PLib lays the dialog out in a two-column
+        ///     grid whose label column is as wide as its widest label wants to be, and a long
+        ///     single-line notice makes that column swallow the whole dialog — pushing every
+        ///     checkbox and text field off the right edge (which is exactly what happened in 1.4.0).
+        /// </summary>
+        [JsonIgnore]
+        [Option("<b>OAuth token</b> goes in token.txt,\n" +
+            "not here — it would be readable on\n" +
+            "stream. Use the MANUAL CONFIG button\n" +
+            "below to open the folder.",
+            "The token is only needed to post to chat or run native Twitch polls.", CAT_TWITCH)]
+        public LocText TokenNotice => null;
+
+        /// <summary>
+        ///     Chat OAuth token WITHOUT the "oauth:" prefix (empty = anonymous). Read from token.txt,
+        ///     never from config.json — see <see cref="LoadToken"/> for why.
+        /// </summary>
+        [JsonIgnore] public string OauthToken => oauthToken;
+
+        [JsonIgnore] private static string oauthToken = "";
 
         // ---- Chat bubbles ----
-        public bool EnableBubbles = true;     // Show chat as speech bubbles above matching duplicants.
-        public string BubblePrefix = "!say";  // Only messages starting with this prefix become bubbles ("" = all messages).
-        public int MaxBubbleLength = 100;     // Hard cap on displayed characters.
-        public float BubbleSeconds = 4f;      // How long a bubble stays on screen.
-        public float BubbleCooldownSeconds = 5f; // Per-user cooldown to prevent spam.
-        public int BubbleFontSize = 10;
-        public int BubbleMaxWidth = 100;      // Wrap width in UI units.
-        public string BubbleFont = "";        // Name of a game TMP font to use ("" = TMP default). See Player.log for available names.
+        [Option("Enable chat bubbles", "Show chat messages as speech bubbles above the duplicant " +
+            "whose name matches the viewer's nick.", CAT_BUBBLES)]
+        public bool EnableBubbles { get; set; } = true;
+
+        [Option("Bubble command", "Only messages starting with this prefix become bubbles. " +
+            "Leave EMPTY to turn every chat message into a bubble.", CAT_BUBBLES)]
+        public string BubblePrefix { get; set; } = "!say";
+
+        [Option("Max bubble length", "Longer messages are cut off at this many characters.", CAT_BUBBLES)]
+        [Limit(20, 200)]
+        public int MaxBubbleLength { get; set; } = 100;
+
+        [Option("Bubble duration", "How many seconds a bubble stays on screen.", CAT_BUBBLES, Format = "F0")]
+        [Limit(1, 15)]
+        public float BubbleSeconds { get; set; } = 4f;
+
+        [Option("Per-viewer cooldown", "Seconds a viewer must wait before their next bubble. " +
+            "Anti-spam.", CAT_BUBBLES, Format = "F0")]
+        [Limit(0, 60)]
+        public float BubbleCooldownSeconds { get; set; } = 5f;
+
+        [Option("Bubble font size", "Text size inside the bubble.", CAT_BUBBLES)]
+        [Limit(6, 40)]
+        public int BubbleFontSize { get; set; } = 10;
+
+        [Option("Bubble width", "Wrap width in UI units.", CAT_BUBBLES)]
+        [Limit(50, 400)]
+        public int BubbleMaxWidth { get; set; } = 100;
+
+        public string BubbleFont { get; set; } = "";  // Name of a game TMP font ("" = TMP default). See Player.log for available names.
 
         // ---- Critter adoption ----
-        public bool EnableCritterAdopt = true; // Viewers can "adopt" a critter (rename it to their nick) via chat.
-        public string AdoptCommand = "!adopt"; // Chat command that adopts a random free critter for the viewer.
-        public bool ShowAdoptedNameTag = true; // Show a persistent name label under each adopted critter.
+        [Option("Enable critter adoption", "Viewers can adopt a critter with a chat command; the " +
+            "critter is renamed to their nick.", CAT_ADOPT)]
+        public bool EnableCritterAdopt { get; set; } = true;
+
+        [Option("Adopt command", "Chat command that adopts a random un-adopted critter.", CAT_ADOPT)]
+        public string AdoptCommand { get; set; } = "!adopt";
+
+        [Option("Show name tag", "Show a permanent name label under each adopted critter.", CAT_ADOPT)]
+        public bool ShowAdoptedNameTag { get; set; } = true;
 
         // ---- Voting ----
-        public bool EnableEvents = true;      // Master switch for the event/voting system.
-        public int StartAfterCycles = 0;      // Cycles to wait after the colony loads before the FIRST vote auto-starts (0 = manual, use the pause-menu button). Gives the streamer time to prepare.
-        public bool UseTwitchPolls = false;   // Use native Twitch polls instead of counting chat votes.
-        public int VotingSeconds = 60;        // Voting window length.
-        public float VoteDelay = 540f;        // Seconds between the end of one vote and the start of the next (auto-restart).
-        public int OptionsPerVote = 3;        // How many events to offer (2-5 for polls).
-        public string VoteCommandPrefix = "!vote"; // Chat-vote command, e.g. "!vote 2".
-        public bool AnnounceInChat = true;    // Post vote options + winner to chat (needs Nick + token with chat:edit).
-        public bool SurpriseBoxZoom = true;   // Surprise-box event pans/zooms the camera to the box.
+        [Option("Enable events & voting", "Master switch for the whole event/voting system.", CAT_VOTING)]
+        public bool EnableEvents { get; set; } = true;
+
+        [Option("Start after cycles", "Wait this many cycles after loading a colony before the FIRST " +
+            "vote starts automatically, so you have time to get set up. 0 = don't start on its own " +
+            "(use the pause-menu button).", CAT_VOTING)]
+        [Limit(0, 100)]
+        public int StartAfterCycles { get; set; } = 0;
+
+        [Option("Use native Twitch polls", "Run a real Twitch poll instead of counting chat messages. " +
+            "Requires an Affiliate/Partner account and a token with poll scopes.", CAT_VOTING)]
+        public bool UseTwitchPolls { get; set; } = false;
+
+        [Option("Voting window", "How many seconds viewers have to vote.", CAT_VOTING)]
+        [Limit(15, 300)]
+        public int VotingSeconds { get; set; } = 60;
+
+        [Option("Delay between votes", "Seconds from the end of one vote to the start of the next.",
+            CAT_VOTING, Format = "F0")]
+        [Limit(0, 3600)]
+        public float VoteDelay { get; set; } = 540f;
+
+        [Option("Options per vote", "How many events to offer. Twitch polls allow 2-5.", CAT_VOTING)]
+        [Limit(2, 5)]
+        public int OptionsPerVote { get; set; } = 3;
+
+        [Option("Vote command", "Chat-vote command, e.g. \"!vote 2\".", CAT_VOTING)]
+        public string VoteCommandPrefix { get; set; } = "!vote";
+
+        [Option("Announce in chat", "Post the options and the winner to chat. Needs a bot nick and a " +
+            "token with chat:edit.", CAT_VOTING)]
+        public bool AnnounceInChat { get; set; } = true;
+
+        [Option("Surprise box camera", "The surprise-box event pans and zooms the camera to the box.",
+            CAT_VOTING)]
+        public bool SurpriseBoxZoom { get; set; } = true;
 
         // ---- Twitch subs ----
-        public bool EnableSubRewards = true;       // Show a "NEW SUB" banner + make dupes cheer when someone subs/resubs/gifts.
-        public float SubRewardCooldownSeconds = 12f; // Min gap between sub celebrations (coalesces sub-trains).
+        [Option("Celebrate subs", "Show a NEW SUB banner and make the duplicants cheer when someone " +
+            "subs, resubs, or gifts a sub.", CAT_SUBS)]
+        public bool EnableSubRewards { get; set; } = true;
+
+        [Option("Sub celebration cooldown", "Minimum seconds between celebrations, so a sub train " +
+            "doesn't spam them.", CAT_SUBS, Format = "F0")]
+        [Limit(0, 120)]
+        public float SubRewardCooldownSeconds { get; set; } = 12f;
 
         // ---- Twitch Helix (native polls; overrides only needed for the CLI mock) ----
-        public string HelixBaseUrl = "https://api.twitch.tv/helix";
-        public string ClientIdOverride = ""; // Only for the Twitch CLI mock; empty = read from token validation.
-        public string BroadcasterIdOverride = "";
+        public string HelixBaseUrl { get; set; } = "https://api.twitch.tv/helix";
+        public string ClientIdOverride { get; set; } = ""; // Only for the Twitch CLI mock; empty = read from token validation.
+        public string BroadcasterIdOverride { get; set; } = "";
 
         // ------------------------------------------------------------------
 
         [JsonIgnore] public static ModConfig Instance { get; private set; } = new ModConfig();
 
-        [JsonIgnore] private static string ConfigDir =>
-            Path.Combine(Util.RootFolder(), "config_twitchcolony");
+        /// <summary>
+        ///     Where the config lived before 1.4.0, when we managed the file ourselves. PLib decides
+        ///     the path now (mods/config/TwitchColony/config.json), so old files get migrated once.
+        /// </summary>
+        [JsonIgnore] private static string LegacyConfigPath =>
+            Path.Combine(Util.RootFolder(), "config_twitchcolony", "config.json");
 
-        [JsonIgnore] private static string ConfigPath => Path.Combine(ConfigDir, "config.json");
+        [JsonIgnore] public static string ConfigPath => POptions.GetConfigFilePath(typeof(ModConfig));
+
+        /// <summary>The token lives in its own file next to config.json. See <see cref="LoadToken"/>.</summary>
+        [JsonIgnore] public static string TokenPath =>
+            Path.Combine(Path.GetDirectoryName(ConfigPath) ?? "", "token.txt");
 
         public static void Load()
         {
             try
             {
-                Directory.CreateDirectory(ConfigDir);
-                if (File.Exists(ConfigPath))
+                MigrateLegacyConfig();
+
+                var path = ConfigPath;
+                // ReadSettings returns null both for "no file yet" and "the file is broken". Only the
+                // file-on-disk check tells them apart, and the difference matters: re-saving over a
+                // config with a typo in it would silently wipe every setting the user has.
+                var fileExisted = File.Exists(path);
+                var loaded = POptions.ReadSettings<ModConfig>();
+
+                if (loaded != null)
                 {
-                    var json = File.ReadAllText(ConfigPath);
-                    Instance = JsonConvert.DeserializeObject<ModConfig>(json) ?? new ModConfig();
-                    Log.Info("Config loaded.");
+                    Instance = loaded;
+                    LoadToken();  // Before the re-save below — it rescues a token still sitting in config.json.
+                    Save();       // Re-save so options added by a mod update show up in the file with their defaults.
+                    Log.Info("Config loaded from " + path);
+                }
+                else if (fileExisted)
+                {
+                    Instance = new ModConfig();
+                    LoadToken();
+                    Log.Warn("Config at " + path + " could not be parsed (JSON syntax error?). Running " +
+                             "with defaults for now and leaving the file untouched — fix or delete it.");
                 }
                 else
                 {
                     Instance = new ModConfig();
+                    LoadToken();
                     Save();
-                    Log.Info("Wrote default config to " + ConfigPath);
+                    Log.Info("Wrote default config to " + path);
                 }
             }
             catch (Exception e)
@@ -89,13 +228,159 @@ namespace TwitchColony.Config
         {
             try
             {
-                Directory.CreateDirectory(ConfigDir);
-                File.WriteAllText(ConfigPath, JsonConvert.SerializeObject(Instance, Formatting.Indented));
+                POptions.WriteSettings(Instance);  // Creates the folder and honors IndentOutput itself.
             }
             catch (Exception e)
             {
                 Log.Warn("Failed to save config: " + e.Message);
             }
+        }
+
+        /// <summary>
+        ///     Loads the OAuth token from its own file, importing it from config.json if that's where
+        ///     it still is.
+        ///
+        ///     Why a separate file: PLib's options dialog reads config.json when it opens and writes
+        ///     the whole object back when you press OK. Anything you type into config.json while that
+        ///     dialog is open is silently overwritten by its stale snapshot — which is exactly how a
+        ///     hand-pasted token disappeared in 1.4.0. Keeping the token out of that file means the
+        ///     dialog cannot clobber it. It also keeps the one real secret out of the file we regenerate.
+        /// </summary>
+        private static void LoadToken()
+        {
+            try
+            {
+                oauthToken = ParseTokenFile(TokenPath);
+                if (!string.IsNullOrEmpty(oauthToken)) return;
+
+                // No token yet: pick it up from wherever it used to live. Checked even when token.txt
+                // exists but is blank, so pasting it into config.json out of old habit still works.
+                var imported = ExtractTokenFromJson(ConfigPath);
+                if (string.IsNullOrEmpty(imported)) imported = ExtractTokenFromJson(LegacyConfigPath + ".migrated");
+                if (string.IsNullOrEmpty(imported)) imported = ExtractTokenFromJson(LegacyConfigPath);
+
+                if (!string.IsNullOrEmpty(imported))
+                {
+                    oauthToken = imported;
+                    WriteTokenFile(imported);
+                    Log.Info("Moved your OAuth token out of config.json into " + TokenPath +
+                             " — the options screen can't overwrite it there. Edit it in that file from now on.");
+                }
+                else if (!File.Exists(TokenPath))
+                {
+                    WriteTokenFile("");  // Leave an explained, empty file so it's findable.
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warn("Could not read the OAuth token, continuing anonymously: " + e.Message);
+                oauthToken = "";
+            }
+        }
+
+        /// <summary>First line that isn't blank or a # comment.</summary>
+        private static string ParseTokenFile(string path)
+        {
+            if (!File.Exists(path)) return "";
+            foreach (var raw in File.ReadAllLines(path))
+            {
+                var line = raw.Trim();
+                if (line.Length > 0 && !line.StartsWith("#")) return line;
+            }
+
+            return "";
+        }
+
+        private static void WriteTokenFile(string token)
+        {
+            var dir = Path.GetDirectoryName(TokenPath);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(TokenPath,
+                "# Twitch OAuth token for Twitch Colony.\n" +
+                "# Paste the token on its own line below: no \"oauth:\" prefix, no quotes.\n" +
+                "# Leave it empty to read chat anonymously (bubbles and chat voting still work).\n" +
+                "#\n" +
+                "# Keep this file private — anyone with the token can post to chat as you.\n" +
+                "# It lives here rather than in config.json because the in-game options screen\n" +
+                "# rewrites config.json and would overwrite whatever you typed there.\n" +
+                "\n" + token + "\n");
+        }
+
+        /// <summary>
+        ///     Digs an old OauthToken value out of a config file's raw JSON. The property is
+        ///     [JsonIgnore] now, so normal deserialization would skip straight past it.
+        /// </summary>
+        private static string ExtractTokenFromJson(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return "";
+                var token = JObject.Parse(File.ReadAllText(path))["OauthToken"];
+                return token?.Type == JTokenType.String ? ((string)token ?? "").Trim() : "";
+            }
+            catch
+            {
+                return "";  // Broken or unreadable file: nothing to import, and not our problem here.
+            }
+        }
+
+        /// <summary>
+        ///     Moves a pre-1.4.0 config into the location PLib expects, once. Values are read with
+        ///     our own JSON layout (unchanged), written to the new path, and the old file is renamed
+        ///     rather than deleted — if this goes wrong the user's settings are still on disk.
+        /// </summary>
+        private static void MigrateLegacyConfig()
+        {
+            try
+            {
+                var newPath = ConfigPath;
+                if (File.Exists(newPath) || !File.Exists(LegacyConfigPath)) return;
+
+                var legacy = JsonConvert.DeserializeObject<ModConfig>(File.ReadAllText(LegacyConfigPath));
+                if (legacy == null)
+                {
+                    Log.Warn("Old config at " + LegacyConfigPath + " is unreadable; starting fresh.");
+                    return;
+                }
+
+                Instance = legacy;
+                Save();
+                if (!File.Exists(newPath))
+                {
+                    Log.Warn("Could not write the migrated config; leaving the old file in place.");
+                    return;
+                }
+
+                var backup = LegacyConfigPath + ".migrated";
+                if (File.Exists(backup)) File.Delete(backup);
+                File.Move(LegacyConfigPath, backup);
+                Log.Info("Migrated your settings to " + newPath + " (old file kept as " + backup + ").");
+            }
+            catch (Exception e)
+            {
+                Log.Warn("Config migration failed, continuing with whatever loads: " + e.Message);
+            }
+        }
+
+        // ---- IOptions ----
+        // Implemented explicitly on purpose: a public CreateOptions() would drag PLib's IOptionsEntry
+        // (and the PUI types behind it) into our public API surface, and ILRepack then has to leave
+        // those types public instead of internalizing them.
+
+        /// <summary>PLib adds these on top of the [Option] properties; we have no custom entries.</summary>
+        IEnumerable<IOptionsEntry> IOptions.CreateOptions() => null;
+
+        /// <summary>
+        ///     Called by PLib after the user hits OK and the new values are already on disk. PLib
+        ///     built its own instance for the dialog, so publish it as the live one: everything that
+        ///     reads ModConfig.Instance per tick (bubbles, voting, adoption, subs) picks the change up
+        ///     immediately. The IRC connection is the exception — it is opened once when the colony
+        ///     loads, so channel/nick/token changes need a colony reload.
+        /// </summary>
+        void IOptions.OnOptionsChanged()
+        {
+            Instance = this;
+            Log.Info("Settings updated in-game. (Channel/nick/token changes apply after you reload the colony.)");
         }
     }
 }

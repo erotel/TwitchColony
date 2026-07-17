@@ -119,14 +119,19 @@ Notes:
    ./build.sh
    ```
    Output lands in `dist/TwitchColony/` (one `TwitchColony.dll` + the two yaml files).
-   No wine, no ILRepack — the mod references the game DLLs instead of bundling them.
+   No wine — the game DLLs are referenced, never bundled. [PLib](https://github.com/peterhaneve/ONIMods)
+   (the in-game settings screen) is ILRepacked into the DLL, so the mod still ships as a
+   single assembly.
 
 ## Installing & configuring
 
-See **[INSTALL.md](INSTALL.md)** for the full guide — Workshop and manual install, where
-`config.json` lives, copy-paste config recipes (bubbles only / chat voting / chat
-announcements / native polls), a field-by-field reference, OAuth token scopes, and
-troubleshooting.
+Settings live behind the **gear icon** next to the mod in the game's Mods list; `config.json`
+still works if you prefer files.
+
+See **[INSTALL.md](INSTALL.md)** for the full guide — Workshop and manual install, the
+settings screen and where `config.json` lives, copy-paste config recipes (bubbles only /
+chat voting / chat announcements / native polls), a field-by-field reference, OAuth token
+scopes, and troubleshooting.
 
 Short version for a manual/local install: copy the **contents** of `dist/TwitchColony/`
 (`TwitchColony.dll` + both yaml files) into

@@ -69,6 +69,20 @@ namespace TwitchColony.Events
                 return;
             }
 
+            // One viewer, one body in the colony: if a duplicant already carries this nick, the
+            // viewer is "in" the colony already and their chat bubbles over that dupe. Letting them
+            // grab a critter too would give them two of everything.
+            if (SpeechBubbles.FindMinionByName(user) != null)
+            {
+                Log.Info($"{user} already has a duplicant; not adopting a critter.");
+                if (cfg.AnnounceInChat)
+                {
+                    ChatSay?.Invoke($"{user} is already a duplicant here!");
+                }
+
+                return;
+            }
+
             var critter = PickUnadopted();
             if (critter == null)
             {

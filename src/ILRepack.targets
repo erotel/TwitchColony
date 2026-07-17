@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <!-- Merges PLib into TwitchColony.dll so the mod still ships as a single assembly.
+       PLib's own README warns against shipping it loose: mods share whichever loose copy loads
+       first, so an outdated PLib from another mod could override ours. Internalize=true makes
+       PLib's types internal to us so nothing leaks into other mods; it mirrors what PLib's author
+       does for his own mods (Directory.Build.targets in peterhaneve/ONIMods).
+
+       This file exists for a second reason: the ILRepack package ships a default target that runs
+       in Release and merges *every* DLL in the output folder with no LibraryPath. It disables
+       itself when this file is present, which is what we want — the game DLLs must never be
+       merged, only referenced (they're Private=false, so they never reach the output folder).
+       LibraryPath points at lib/ so ILRepack can resolve PLib's references (Newtonsoft.Json,
+       UnityEngine.*, Assembly-CSharp) without merging them. -->
+  <Target Name="MergePLib" AfterTargets="Build" Condition="Exists('$(TargetDir)PLib.dll')">
+    <ItemGroup>
+      <MergeInputs Include="$(TargetPath)" />
+      <MergeInputs Include="$(TargetDir)PLib.dll" />
+    </ItemGroup>
+
+    <Message Importance="high" Text="Merging PLib into $(TargetName)$(TargetExt) …" />
+
+    <ILRepack
+      Parallel="true"
+      Internalize="true"
+      DebugInfo="false"
+      InputAssemblies="@(MergeInputs)"
+      TargetKind="SameAsPrimaryAssembly"
+      LibraryPath="$(LibFolder)"
+      OutputFile="$(TargetPath)" />
+
+    <!-- The merged copy is inside TwitchColony.dll now; a loose PLib.dll next to it would only
+         invite someone to ship it by accident. -->
+    <Delete Files="$(TargetDir)PLib.dll" />
+  </Target>
+
+</Project>

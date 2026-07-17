@@ -1,11 +1,12 @@
 # Installing & configuring Twitch Colony
 
 A step-by-step guide to getting the mod running and tuning it. If you only want the
-short version: **subscribe on the Workshop → enable the mod → set your `Channel` in
-`config.json` → load a colony → click "Start Twitch Votes" in the pause menu.**
+short version: **subscribe on the Workshop → enable the mod → open the mod's settings
+(gear icon in the Mods list) → set your `Channel` → load a colony → click "Start Twitch
+Votes" in the pause menu.**
 
 - [1. Install the mod](#1-install-the-mod)
-- [2. First run — where the config lives](#2-first-run--where-the-config-lives)
+- [2. Settings — in-game screen or config.json](#2-settings--in-game-screen-or-configjson)
 - [3. Quick-start recipes](#3-quick-start-recipes)
 - [4. Full configuration reference](#4-full-configuration-reference)
 - [5. Getting an OAuth token](#5-getting-an-oauth-token)
@@ -49,25 +50,57 @@ Minimum game version: **U59+** (`minimumSupportedBuild: 740622`).
 
 ---
 
-## 2. First run — where the config lives
+## 2. Settings — in-game screen or config.json
 
-The **first time you load a colony** with the mod enabled, it writes a default config to:
+### The easy way: the settings screen
 
-```
-Documents\Klei\OxygenNotIncluded\config_twitchcolony\config.json
-```
+Open **Mods** in the main menu, find **Twitch Colony**, and click the **gear icon** next to
+it. Everything you normally tune is there, grouped into *Twitch connection*, *Chat bubbles*,
+*Critter adoption*, *Voting* and *Twitch subs*. Click **OK** and it's saved.
 
-> Note this is **not** inside the `mods\` folder — it sits next to the game's other
-> Klei config folders, so your settings survive mod updates and re-subscribes.
-
-**Edit `config.json` with the game closed**, then start the game again. (The mod reads
-the file on load; changes made while the game is running are not picked up.)
-
-Bare minimum to do anything useful: set `Channel` to your Twitch channel login (all
+Bare minimum to do anything useful: set **Channel** to your Twitch channel login (all
 lowercase, the name from your `twitch.tv/<name>` URL).
 
-If the file ever gets corrupted (e.g. a missing comma), the mod logs a warning and
-falls back to defaults. Delete the file and reload a colony to regenerate a clean one.
+Most settings take effect the moment you hit OK. **Channel, bot nick and the token** are the
+exception — the chat connection is opened once when a colony loads, so those three only apply
+after you reload the colony.
+
+> **The OAuth token is deliberately not on the settings screen.** You're a streamer: if you
+> opened that screen on air, your token would be sitting on the stream in plain text for
+> anyone to copy — and a chat token is a password. It goes in `token.txt` instead (§5).
+
+### The files
+
+The mod writes two files when the game starts with the mod enabled:
+
+```
+Documents\Klei\OxygenNotIncluded\mods\config\TwitchColony\config.json   <- all settings
+Documents\Klei\OxygenNotIncluded\mods\config\TwitchColony\token.txt     <- just the OAuth token
+```
+
+The **MANUAL CONFIG** button on the settings screen opens that folder for you. The exact paths
+are also printed in `Player.log` on every load, so you never have to guess.
+
+**Why the token has its own file:** the settings screen loads `config.json` when it opens and
+writes the whole file back when you press **OK**. Anything you typed into `config.json` while
+that screen was open gets overwritten by its older copy. A token pasted there could quietly
+vanish — so it lives in a file the settings screen never touches. If you still have a token in
+`config.json` from an earlier version, the mod moves it into `token.txt` for you on the next
+start and says so in the log.
+
+**Edit the file with the game closed**, then start the game again — it's read at startup.
+
+> **Upgrading from 1.3.0 or older?** Nothing to do. Your old
+> `Documents\Klei\OxygenNotIncluded\config_twitchcolony\config.json` is imported automatically
+> the first time 1.4.0 starts, and the old file is kept as `config.json.migrated` in case you
+> want it back. Edit the new path from then on.
+
+New settings added by a mod update are written into your file automatically, with their
+defaults, without touching what you'd already set.
+
+If the file ever gets a syntax error (a missing comma is the classic), the mod logs a warning,
+runs on defaults for that session, and **leaves your file alone** so nothing is lost — fix the
+JSON, or delete the file and restart to regenerate a clean one.
 
 ---
 
@@ -75,6 +108,8 @@ falls back to defaults. Delete the file and reload a colony to regenerate a clea
 
 Copy one of these into `config.json`, replace `yourchannel`, save, and load a colony.
 Each shows only the fields that matter for that setup; everything else keeps its default.
+(You can set all of this on the in-game settings screen too — the recipes are just faster to
+paste, and the token has to go in the file anyway.)
 
 ### Recipe 1 — Chat bubbles only, no login (anonymous)
 
@@ -110,14 +145,13 @@ the most votes fires. Works fully anonymously (read-only).
 ### Recipe 3 — Chat voting **and** the bot announces options + winner in chat
 
 Same as recipe 2, but the mod also posts the vote options and the winner into chat. This
-**requires a login** (`Nick` + `OauthToken` with the `chat:edit` scope). The `Nick` can
-be your own account or a dedicated bot account.
+**requires a login**: `Nick` here, plus a token with the `chat:edit` scope in `token.txt`
+(see §5). The `Nick` can be your own account or a dedicated bot account.
 
 ```json
 {
   "Channel": "yourchannel",
   "Nick": "yourbotname",
-  "OauthToken": "abcd1234yourtokenwithouttheoauthprefix",
   "EnableEvents": true,
   "UseTwitchPolls": false,
   "AnnounceInChat": true
@@ -127,14 +161,13 @@ be your own account or a dedicated bot account.
 ### Recipe 4 — Native Twitch polls (Affiliate/Partner)
 
 Instead of counting chat messages, the mod opens a **real Twitch poll** and reads the
-result. Requires an Affiliate/Partner channel and a token with
+result. Requires an Affiliate/Partner channel and a token (in `token.txt`, see §5) with
 `channel:manage:polls` + `channel:read:polls`.
 
 ```json
 {
   "Channel": "yourchannel",
   "Nick": "yourchannel",
-  "OauthToken": "abcd1234yourtokenwithouttheoauthprefix",
   "EnableEvents": true,
   "UseTwitchPolls": true,
   "VotingSeconds": 60,
@@ -155,7 +188,9 @@ the developer notes in `CLAUDE.md`).
 
 ## 4. Full configuration reference
 
-Defaults are what the mod writes on first run.
+Defaults are what the mod writes on first run. Every field below is also on the in-game
+settings screen (§2), **except** the Helix overrides, which are file-only. The OAuth token
+isn't in `config.json` at all — it has its own file (§2).
 
 ### Twitch connection
 
@@ -163,7 +198,7 @@ Defaults are what the mod writes on first run.
 |---|---|---|
 | `Channel` | `""` | Twitch channel login to join (lowercase, from your URL). **Required for anything to happen.** |
 | `Nick` | `""` | Login used to *send* messages. Empty = anonymous read-only (bubbles + chat voting still work; the bot just can't talk or run native polls). |
-| `OauthToken` | `""` | Chat/API OAuth token **without** the `oauth:` prefix. Empty = anonymous. |
+| *(the token)* | — | Not a `config.json` field: paste it into `token.txt` in the same folder, **without** the `oauth:` prefix. Empty = anonymous. See §2 and §5. |
 
 ### Chat bubbles
 
@@ -233,7 +268,7 @@ have subs, i.e. Affiliate/Partner). Works even on the anonymous connection.
 You only need a token if you want the bot to **talk in chat** (`AnnounceInChat`) or to run
 **native polls** (`UseTwitchPolls`). Pure bubbles + chat voting need **no token at all**.
 
-Whatever route you use, paste the result into `OauthToken` **without** any leading `oauth:`
+Whatever route you use, paste the result into `token.txt` **without** any leading `oauth:`
 part, and set `Nick` to the account the token belongs to.
 
 **Scopes you need:**
@@ -266,7 +301,7 @@ Twitch polls** (`UseTwitchPolls`, Affiliate/Partner only). Covers chat too.
 > Affiliate, use chat voting (`UseTwitchPolls: false`) — it works for everyone.
 
 After you click **Authorize**, Twitch sends you to the mod's login page, which shows the
-token — copy it into `OauthToken` (no `oauth:` prefix), and set `Nick` to the account you
+token — copy it into `token.txt` (no `oauth:` prefix), and set `Nick` to the account you
 authorized with. The link is permanent; reuse it whenever you need a fresh token.
 
 <details>
@@ -339,7 +374,9 @@ wrong.
 |---|---|
 | No `[TwitchColony]` lines at all | Mod not enabled, or you didn't load into a colony yet. Re-check the Mods menu. |
 | "Config loaded" but nothing happens | `Channel` is empty. Set it to your channel login (lowercase). |
-| Config warning / "using defaults" | `config.json` has a syntax error (often a missing comma). Fix the JSON, or delete the file and reload to regenerate. |
+| Config warning / "using defaults" | `config.json` has a syntax error (often a missing comma). Your file is left untouched — fix the JSON, or delete it and restart to regenerate. The log line names the exact path. |
+| Settings gear icon missing | The mod didn't finish loading — check `Player.log` for `[TwitchColony]` errors. |
+| Changed Channel/Nick/token, nothing happened | Those three apply when the chat connection opens. Reload the colony. |
 | Bubbles never show | `EnableBubbles` off; message didn't start with `BubblePrefix`; or no live dupe matches the chatter's nick. |
 | Bot doesn't announce in chat | `AnnounceInChat` needs `Nick` + a token with `chat:edit`. Anonymous connections can read but not send. |
 | Native poll never opens | Not Affiliate/Partner, missing `channel:manage:polls`/`channel:read:polls`, or expired token. Check the log for the Helix error. |

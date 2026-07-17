@@ -23,6 +23,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <!-- PLib: in-game mod options UI. Merged into our DLL below (see the ILRepack target). -->
+    <PackageReference Include="PLib" Version="4.25.0" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.46" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- Game / Unity / library references. Private=false => never copied to output, never merged. -->
@@ -68,5 +71,7 @@
       <Private>false</Private>
     </Reference>
   </ItemGroup>
+
+  <!-- The PLib merge lives in ILRepack.targets (imported automatically by the ILRepack package). -->
 
 </Project>

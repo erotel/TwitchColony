@@ -2,7 +2,8 @@
 # One-command build for the Twitch Colony mod.
 #   - compiles the single project against the game DLLs in ./lib
 #   - assembles a ready-to-copy mod folder in ./dist/TwitchColony
-# No wine, no ILRepack: we reference the game DLLs (never bundle them), so the output is one DLL.
+# No wine. The game DLLs are only referenced, never bundled; PLib is ILRepacked in (see
+# src/ILRepack.targets), so the output is still a single TwitchColony.dll.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
