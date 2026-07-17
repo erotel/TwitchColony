@@ -214,8 +214,16 @@ type at runtime. It's only types *we* compile that would have two identities.
 
 ## Testing your events without waiting for chat
 
-Waiting out a vote to see whether your event works gets old fast. `TriggerEvent` fires one straight
-away by id:
+Turn on **Show the event list button** in Twitch Colony's settings and the pause menu grows a
+**"Twitch Colony: Events"** button. It lists every registered event — yours included — with its
+group, danger, how often it comes up, and whether chat could be offered it right now (`can come up`
+/ `blocked: danger limit` / `blocked: its own condition` / `never drawn`), each with a Trigger
+button.
+
+That last column is the useful one while you're building: it answers "why does my event never come
+up?" without you having to guess.
+
+Or do it from code — `TriggerEvent` fires one straight away by id:
 
 ```csharp
 // In your mod's Update, behind a debug flag:

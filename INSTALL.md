@@ -243,6 +243,7 @@ messages also pop up as bubbles above that critter, just like duplicants.
 | `VoteCommandPrefix` | `"!vote"` | Chat-vote command; viewers type e.g. `!vote 2`. |
 | `AnnounceInChat` | `true` | Post the options and the winner into chat. Needs `Nick` + a token with `chat:edit`; otherwise it silently does nothing. |
 | `SurpriseBoxZoom` | `true` | The Surprise-Box event pans/zooms the camera to the box. Set `false` if you dislike the camera moving. |
+| `ShowEventBrowser` | `false` | Adds a **"Twitch Colony: Events"** button to the pause menu: a list of every event with its group, danger, how often it comes up and whether it's currently eligible — plus a button to fire it. Handy for trying things out or building your own events. It ignores the vote, your danger cap and the events' conditions, so **leave it off while you're live** unless one-click "kill a duplicant" appeals. |
 
 #### Danger levels and difficulty
 

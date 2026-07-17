@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
+using TwitchColony.Config;
+using TwitchColony.UI;
 using TwitchColony.Voting;
 using UnityEngine;
 
@@ -19,6 +21,13 @@ namespace TwitchColony
             "Start Twitch Votes",
             global::Action.NumActions,
             OnTwitchButtonPressed
+        );
+
+        /// <summary>Opens the event list. Only inserted when the streamer switches it on.</summary>
+        private static readonly KButtonMenu.ButtonInfo BrowserButtonInfo = new KButtonMenu.ButtonInfo(
+            "Twitch Colony: Events",
+            global::Action.NumActions,
+            OnBrowserButtonPressed
         );
 
         private static ColorStyleSetting twitchButtonStyle;
@@ -60,6 +69,12 @@ namespace TwitchColony
             );
         }
 
+        private static void OnBrowserButtonPressed()
+        {
+            // Building the window touches the game; keep it off the click callback.
+            GameScheduler.Instance.ScheduleNextFrame("TwitchColony.EventBrowser", _ => EventBrowser.Show());
+        }
+
         /// <summary>Recompute the button's enabled state and push it to the screen if it's open.</summary>
         private static void RefreshButtonState()
         {
@@ -82,16 +97,36 @@ namespace TwitchColony
             private static void Postfix(PauseScreen __instance, ref IList<KButtonMenu.ButtonInfo> ___buttons)
             {
                 var buttons = ___buttons.ToList();
+                var changed = false;
 
                 // ConfigureButtonInfos runs every time the menu is rebuilt; don't add our button twice.
-                if (buttons.Contains(TwitchButtonInfo))
+                if (!buttons.Contains(TwitchButtonInfo))
                 {
-                    return;
+                    var idx = System.Math.Min(4, buttons.Count); // sit near the top, but never past the end
+                    buttons.Insert(idx, TwitchButtonInfo);
+                    changed = true;
                 }
 
-                var idx = System.Math.Min(4, buttons.Count); // sit near the top, but never past the end
-                buttons.Insert(idx, TwitchButtonInfo);
-                __instance.SetButtons(buttons);
+                // The event list is opt-in, and the menu is rebuilt often enough that toggling the
+                // setting takes effect the next time it opens — no reload needed.
+                var wantBrowser = ModConfig.Instance.ShowEventBrowser;
+                var hasBrowser = buttons.Contains(BrowserButtonInfo);
+                if (wantBrowser && !hasBrowser)
+                {
+                    buttons.Insert(System.Math.Min(buttons.IndexOf(TwitchButtonInfo) + 1, buttons.Count),
+                        BrowserButtonInfo);
+                    changed = true;
+                }
+                else if (!wantBrowser && hasBrowser)
+                {
+                    buttons.Remove(BrowserButtonInfo);
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    __instance.SetButtons(buttons);
+                }
             }
         }
 

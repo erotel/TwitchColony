@@ -166,6 +166,12 @@ namespace TwitchColony.Config
             CAT_VOTING)]
         public bool SurpriseBoxZoom { get; set; } = true;
 
+        [Option("Show the event list button", "Adds a pause-menu button that lists every event and " +
+            "lets you fire one on the spot. For trying things out and for building your own events — " +
+            "it ignores the vote, your danger limit and the events' own conditions, so leave it off " +
+            "while you're live unless you fancy one-click 'kill a duplicant'.", CAT_VOTING)]
+        public bool ShowEventBrowser { get; set; } = false;
+
         // ---- Twitch subs ----
         [Option("Celebrate subs", "Show a NEW SUB banner and make the duplicants cheer when someone " +
             "subs, resubs, or gifts a sub.", CAT_SUBS)]
