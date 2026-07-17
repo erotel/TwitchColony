@@ -163,10 +163,10 @@ namespace TwitchColony.UI
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 30000;
 
-            // Scale with resolution so bubbles are a consistent size across displays.
-            var scaler = go.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080);
+            // Scale exactly like the game's own UI, so bubbles sit right at any resolution and
+            // follow the player's UI scale setting. (This used to scale by resolution alone, which
+            // ignored that setting — at 1080p/100% it's the same number, so nothing moves for most.)
+            UiScale.Track(go.AddComponent<CanvasScaler>());
 
             go.AddComponent<GraphicRaycaster>();
         }

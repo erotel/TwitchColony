@@ -50,7 +50,27 @@ namespace TwitchColony.UI
                 FlexSize = Vector2.one,
             });
 
-            dialog.Show();
+            // PDialog.Show() is just Build() + KScreen.Activate(); do it by hand so we can slip the
+            // drag handler in between. Otherwise the window is nailed to the middle of the screen,
+            // on top of the colony you opened it to watch.
+            var window = dialog.Build();
+            if (window == null)
+            {
+                Log.Warn("Event browser: the window failed to build.");
+                return;
+            }
+
+            window.AddComponent<WindowDrag>();
+            if (window.TryGetComponent<KScreen>(out var screen))
+            {
+                screen.Activate();
+            }
+            else
+            {
+                // Shouldn't happen, but a window nobody can close is worse than no window.
+                Log.Warn("Event browser: no KScreen on the dialog; showing it as a plain object.");
+                window.SetActive(true);
+            }
         }
 
         private static IUIComponent Header()

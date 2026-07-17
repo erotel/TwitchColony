@@ -49,7 +49,7 @@ namespace TwitchColony.UI
             canvas = go.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 29000;
-            go.AddComponent<CanvasScaler>();
+            UiScale.Track(go.AddComponent<CanvasScaler>()); // follow the game's UI scale setting
             go.AddComponent<GraphicRaycaster>();
 
             panel = new GameObject("Panel");
@@ -74,7 +74,22 @@ namespace TwitchColony.UI
             prt.anchorMin = new Vector2(0.5f, 1f);
             prt.anchorMax = new Vector2(0.5f, 1f);
             prt.pivot = new Vector2(0.5f, 1f);
-            prt.anchoredPosition = new Vector2(0f, -12f);
+
+            // Wherever the streamer last dragged it to. Top centre is only a default: a stream has a
+            // camera, an overlay and alerts to work around, and only the streamer knows where the
+            // gap is.
+            var cfg = ModConfig.Instance;
+            prt.anchoredPosition = new Vector2(cfg.VoteHudX, cfg.VoteHudY);
+
+            var drag = panel.AddComponent<WindowDrag>();
+            drag.Moved = position =>
+            {
+                // Remember it across colonies and sessions — being made to re-place it every load
+                // would be worse than not being able to move it at all.
+                ModConfig.Instance.VoteHudX = position.x;
+                ModConfig.Instance.VoteHudY = position.y;
+                ModConfig.Save();
+            };
 
             var textGo = new GameObject("Text");
             textGo.transform.SetParent(panel.transform, false);
@@ -91,6 +106,10 @@ namespace TwitchColony.UI
             {
                 Build();
             }
+
+            // Our canvases all follow the game's UI scale; this is the one component that ticks
+            // every frame, so it does the (throttled) re-check for the lot of them.
+            UiScale.Refresh();
 
             var vc = VoteController.Instance;
 

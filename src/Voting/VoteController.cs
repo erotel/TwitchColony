@@ -268,8 +268,14 @@ namespace TwitchColony.Voting
                 case VotingState.VoteInProgress:
                     if (VoteTimeRemaining > 0f)
                     {
-                        // Unscaled: this is real streamer time, not game time.
-                        VoteTimeRemaining -= Time.unscaledDeltaTime;
+                        // Unscaled: this is real streamer time, so the countdown ignores game speed —
+                        // chat votes at the same rate whether the sim is paused or on triple speed.
+                        // The pause SCREEN is different: the streamer has stepped away from the
+                        // colony, and a vote shouldn't resolve (and fire an event) into a menu.
+                        if (!IsGamePaused())
+                        {
+                            VoteTimeRemaining -= Time.unscaledDeltaTime;
+                        }
                     }
                     else
                     {

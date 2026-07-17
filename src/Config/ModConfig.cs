@@ -102,6 +102,12 @@ namespace TwitchColony.Config
 
         public string BubbleFont { get; set; } = "";  // Name of a game TMP font ("" = TMP default). See Player.log for available names.
 
+        // Where the streamer dragged the vote panel to, relative to the top centre of the screen.
+        // Not on the settings screen on purpose: you set this by dragging the panel, and a pair of
+        // coordinate boxes would be a worse way to say the same thing.
+        public float VoteHudX { get; set; } = 0f;
+        public float VoteHudY { get; set; } = -12f;
+
         // ---- Critter adoption ----
         [Option("Enable critter adoption", "Viewers can adopt a critter with a chat command; the " +
             "critter is renamed to their nick.", CAT_ADOPT)]

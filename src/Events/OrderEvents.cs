@@ -101,6 +101,56 @@ namespace TwitchColony.Events
 
                 storage.AddOre(el.id, mass, temp, byte.MaxValue, 0, false, false);
             }
+
+            SeedBuildTemperature(c, storage, temp);
+        }
+
+        /// <summary>
+        ///     Tell the constructable how hot the finished building should be.
+        ///
+        ///     Filling the storage isn't enough: FinishConstruction reads a separate
+        ///     <c>initialTemperature</c> field, which starts at -1 and is only ever filled in by
+        ///     OnCompleteWork — the path a duplicant takes when it finishes the build, and the one we
+        ///     skip by construction. Leave it and the game builds at zero kelvin and logs
+        ///     "&lt;building&gt; has a temperature of zero which has always been an error".
+        ///
+        ///     So do what OnCompleteWork does: a mass-weighted average of whatever is in the build
+        ///     storage. Usually that's just what we seeded, but a partly-delivered build already has
+        ///     real materials at their real temperature, and those should win.
+        /// </summary>
+        private static void SeedBuildTemperature(Constructable c, Storage storage, float fallback)
+        {
+            var mass = 0f;
+            var weighted = 0f;
+
+            var items = storage.items;
+            if (items != null)
+            {
+                foreach (var item in items)
+                {
+                    if (item == null)
+                    {
+                        continue;
+                    }
+
+                    var element = item.GetComponent<PrimaryElement>();
+                    if (element == null || element.Mass <= 0f)
+                    {
+                        continue;
+                    }
+
+                    mass += element.Mass;
+                    weighted += element.Temperature * element.Mass;
+                }
+            }
+
+            var temperature = mass > 0f ? weighted / mass : fallback;
+            if (temperature <= 1f)
+            {
+                temperature = fallback; // never hand the game a zero
+            }
+
+            Traverse.Create(c).Field<float>("initialTemperature").Value = temperature;
         }
     }
 
