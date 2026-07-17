@@ -20,6 +20,16 @@ namespace TwitchColony.Api
     internal delegate bool TriggerEventDelegate(string id);
 
     /// <summary>
+    ///     Read the current state of a registered event by id — its weight and danger, and whether it
+    ///     could be offered right now (its condition and the streamer's danger cap). The carrier is a
+    ///     Dictionary&lt;string, object&gt; (keys in <see cref="EventData"/>) for the same reason the
+    ///     action payload is: a struct of ours would have two runtime identities across the boundary.
+    ///     The merge-lib unpacks it into a typed EventDataInfo on its own side.
+    /// </summary>
+    internal delegate bool TryGetEventDataDelegate(string eventId,
+        out System.Collections.Generic.Dictionary<string, object> data);
+
+    /// <summary>
     ///     Banner across the top of the screen. Note the UnityEngine type in the sibling delegate
     ///     below: Unity's types are safe to pass across, unlike ours. Both mods reference the same
     ///     UnityEngine.CoreModule out of the game folder, so there is exactly one GameObject type at
@@ -62,6 +72,7 @@ namespace TwitchColony.Api
         public const string RegisterMethodName = "RegisterEvent";
         public const string UnregisterMethodName = "UnregisterEvent";
         public const string TriggerMethodName = "TriggerEvent";
+        public const string TryGetEventDataMethodName = "TryGetEventData";
         public const string ShowBannerMethodName = "ShowBanner";
         public const string ShowBubbleMethodName = "ShowBubble";
         public const string VersionPropertyName = "ApiVersion";
@@ -70,7 +81,13 @@ namespace TwitchColony.Api
         ///     Bumped only for a breaking change to the bridge signature. The merge-lib refuses to
         ///     register (rather than throwing) against a main mod whose version it doesn't know, so
         ///     an old add-on can't take the game down with a MissingMethodException.
+        ///
+        ///     v2 added <see cref="TryGetEventDataMethodName"/>. It's a pure addition — the register
+        ///     signature is unchanged, so a v1 add-on still resolves and runs against a v2 mod, and a
+        ///     v2 add-on falls back gracefully (TryGetEventData just returns false) against a v1 mod,
+        ///     exactly as TriggerEvent did when it was added. The number is the honest capability
+        ///     signal for add-ons that want to check <c>InstalledApiVersion &gt;= 2</c>.
         /// </summary>
-        public const int Version = 1;
+        public const int Version = 2;
     }
 }

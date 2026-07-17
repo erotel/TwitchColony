@@ -79,8 +79,9 @@ bool TwitchColonyApi.RegisterEvent(
 
 bool TwitchColonyApi.UnregisterEvent(string id);
 bool TwitchColonyApi.TriggerEvent(string id);     // fire one now, for testing — see below
+bool TwitchColonyApi.TryGetEventData(string id, out EventDataInfo info); // read state — see below (v2)
 bool TwitchColonyApi.IsAvailable { get; }        // is Twitch Colony installed and talking to us?
-int  TwitchColonyApi.InstalledApiVersion { get; } // 0 when it isn't installed
+int  TwitchColonyApi.InstalledApiVersion { get; } // 0 when it isn't installed, 2+ has TryGetEventData
 
 // On-screen messages — see "Talking to the streamer" below
 bool TwitchColonyApi.ShowBanner(string message, float seconds = 5f);
@@ -160,6 +161,45 @@ condition: EventConditions.All(EventConditions.FromCycle(20), ctx => MyMod.IsRea
 
 `EventConditions` has `FromCycle`, `BeforeCycle`, `All`, `Any`, `Not` — or just write your own
 `ctx => bool`.
+
+---
+
+## An event that picks another event  *(API v2)*
+
+Sometimes an event's whole job is to choose among others — a "random weather" event that rolls one
+of several weather effects, weighted, skipping any that can't run right now. `TryGetEventData` reads
+a registered event's current state without firing it, so you can roll your own choice and then
+`TriggerEvent` the winner:
+
+```csharp
+// Registered once, weight Never, so it's only ever fired on purpose (e.g. by your own vote event):
+var candidates = new[] { "mymod.rain", "mymod.heatwave", "mymod.fog" };
+
+var pool = new List<(string id, int weight)>();
+foreach (var id in candidates)
+    if (TwitchColonyApi.TryGetEventData(id, out var info) && info.Eligible)
+        pool.Add((id, info.Weight));
+
+string winner = WeightedPick(pool);          // your own weighted roll over `pool`
+if (winner != null) TwitchColonyApi.TriggerEvent(winner);
+```
+
+`EventDataInfo` carries:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `Id`, `DisplayName`, `GroupId` | `string` | As registered (`GroupId` may be `null`). |
+| `Weight` | `int` | The **stable** configured weight, not the one temporarily damped by a recent group — what you want for a roll. |
+| `Danger` | `EventDanger` | How much it can hurt. |
+| `ConditionMet` | `bool` | Its condition passes right now. |
+| `WithinDangerCap` | `bool` | Its danger is within the streamer's cap for this cycle. |
+| `Eligible` | `bool` | `Weight > 0 && ConditionMet && WithinDangerCap` — the same test a real vote draw applies. The one flag most callers want. |
+
+Check the individual flags instead of `Eligible` if you mean to roll **past** the danger cap on
+purpose — remember `TriggerEvent` ignores it, so respecting `WithinDangerCap` is on you. `TryGetEventData`
+returns `false` (and leaves `info` null) when there's no such id, or when the installed Twitch Colony
+predates v2 — a v1 build simply doesn't have this call, and your event should have a fallback for
+that (`InstalledApiVersion >= 2` tells you up front).
 
 ---
 
@@ -268,11 +308,16 @@ Integration mod, and it's why this one has a licence file.
 
 ## Versioning
 
-`TwitchColonyApi` looks the bridge up by its exact signature. If a future Twitch Colony makes a
-breaking change, the lookup finds nothing, your events are skipped with a warning in `Player.log`,
-and **nothing throws**. Check `IsAvailable` if you want to know.
+`TwitchColonyApi` looks each bridge method up by its exact signature. If a future Twitch Colony
+makes a breaking change, the lookup finds nothing, that call no-ops (events skipped with a warning
+in `Player.log`), and **nothing throws**. Check `IsAvailable` if you want to know.
 
-Current contract: **v1**.
+New calls are added the same way, method by method: a newer add-on against an older Twitch Colony
+finds the calls that exist and quietly no-ops the ones that don't, so you never need an exact version
+match. `InstalledApiVersion` tells you which surface is present if you'd rather branch up front.
+
+Current contract: **v2** — v2 added `TryGetEventData`. Everything from v1 is unchanged, so v1 add-ons
+run against v2 untouched, and v2 add-ons fall back cleanly against a v1 mod.
 
 Found a problem, or need something the API can't express? Open an issue — the contract is meant to
 grow, not to be worked around.

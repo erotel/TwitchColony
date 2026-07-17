@@ -260,6 +260,33 @@ namespace TwitchColony.Events
             return pool[TakeWeightedIndex(weights)];
         }
 
+        /// <summary>
+        ///     Describe one event's current state for the modding API (<see cref="Api.EventBridge"/>):
+        ///     its weight and danger, whether its condition passes right now, and whether it's within
+        ///     the streamer's cycle-scaled danger cap. Same context and checks a vote draw uses, minus
+        ///     the group cooldown — an add-on rolling its own selection wants the stable weight, not
+        ///     one temporarily halved by what fired last. Keys are in <see cref="EventData"/>.
+        /// </summary>
+        internal static Dictionary<string, object> DescribeEvent(GameEvent ev)
+        {
+            var context = BuildDrawContext();
+            var cycle = EventContext.GetInt(context, EventContext.Cycle, -1);
+            var withinCap = ev.Danger <= AllowedDanger(cycle);
+            var conditionMet = CanRunSafely(ev, context);
+
+            return new Dictionary<string, object>
+            {
+                { EventData.Id, ev.Id },
+                { EventData.DisplayName, ev.DisplayName },
+                { EventData.GroupId, ev.GroupId },
+                { EventData.Weight, ev.Weight },
+                { EventData.Danger, ev.Danger },
+                { EventData.ConditionMet, conditionMet },
+                { EventData.WithinDangerCap, withinCap },
+                { EventData.Eligible, ev.Weight > 0 && conditionMet && withinCap },
+            };
+        }
+
         /// <summary>Everything eligible right now, with the weight it should be drawn at.</summary>
         private static void BuildPool(int allowedDanger, object context, List<GameEvent> pool,
             List<int> weights, string excludeId = null)

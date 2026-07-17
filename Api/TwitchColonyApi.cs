@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace TwitchColony.Api
@@ -39,6 +40,7 @@ namespace TwitchColony.Api
         private static MethodInfo registerMethod;
         private static MethodInfo unregisterMethod;
         private static MethodInfo triggerMethod;
+        private static MethodInfo tryGetDataMethod;
         private static MethodInfo bannerMethod;
         private static MethodInfo bannerAtTargetMethod;
         private static MethodInfo bannerAtPositionMethod;
@@ -159,6 +161,62 @@ namespace TwitchColony.Api
             catch (Exception e)
             {
                 UnityEngine.Debug.LogWarning(LogPrefix + "Could not trigger event '" + id + "': " +
+                                             (e.InnerException ?? e).Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Look up a registered event's current state by id, without firing it — its weight and
+        ///     danger, whether its condition passes right now, and whether it's within the streamer's
+        ///     danger cap this cycle. For building an event that rolls its own weighted choice over a
+        ///     set of others and then triggers the winner (a "random weather event", say).
+        ///
+        ///     <code>
+        ///     // Pick one of my weather events, weighted, respecting condition + the streamer's cap:
+        ///     var pool = new List&lt;(string id, int weight)&gt;();
+        ///     foreach (var id in myWeatherEventIds)
+        ///         if (TwitchColonyApi.TryGetEventData(id, out var info) &amp;&amp; info.Eligible)
+        ///             pool.Add((id, info.Weight));
+        ///     var winner = WeightedPick(pool);      // your own roll
+        ///     if (winner != null) TwitchColonyApi.TriggerEvent(winner);
+        ///     </code>
+        ///
+        ///     <see cref="EventDataInfo.Eligible"/> bundles "weight &gt; 0, condition met, within the
+        ///     danger cap" — the same test a real vote draw applies. Check the individual flags
+        ///     instead if you want to roll past the cap on purpose (<see cref="TriggerEvent"/> does).
+        ///     Reads only; safe to call any time, though the danger/condition is a snapshot of now.
+        /// </summary>
+        /// <param name="id">Id of a registered event — yours, or one of Twitch Colony's own.</param>
+        /// <param name="info">The event's state on success; null if there's no such id.</param>
+        /// <returns>
+        ///     true if the event exists; false if Twitch Colony isn't installed, is older than v2, or
+        ///     has no such id. Never throws.
+        /// </returns>
+        public static bool TryGetEventData(string id, out EventDataInfo info)
+        {
+            info = null;
+            Resolve();
+            if (tryGetDataMethod == null)
+            {
+                return false; // Twitch Colony absent, or a v1 build without this call.
+            }
+
+            try
+            {
+                var args = new object[] { id, null };
+                var found = (bool)tryGetDataMethod.Invoke(null, args);
+                if (!found || !(args[1] is IDictionary<string, object> data))
+                {
+                    return false;
+                }
+
+                info = new EventDataInfo(data);
+                return true;
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogWarning(LogPrefix + "Could not read event data for '" + id + "': " +
                                              (e.InnerException ?? e).Message);
                 return false;
             }
@@ -368,6 +426,11 @@ namespace TwitchColony.Api
                 triggerMethod = bridge.GetMethod(ApiContract.TriggerMethodName,
                     BindingFlags.Public | BindingFlags.Static, null,
                     ParametersOf(typeof(TriggerEventDelegate)), null);
+
+                // Added in v2, so a v1 Twitch Colony won't have it. Missing = TryGetEventData no-ops.
+                tryGetDataMethod = bridge.GetMethod(ApiContract.TryGetEventDataMethodName,
+                    BindingFlags.Public | BindingFlags.Static, null,
+                    ParametersOf(typeof(TryGetEventDataDelegate)), null);
 
                 bannerMethod = bridge.GetMethod(ApiContract.ShowBannerMethodName,
                     BindingFlags.Public | BindingFlags.Static, null,

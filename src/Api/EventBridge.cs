@@ -34,6 +34,7 @@ namespace TwitchColony.Api
             RegisterEventDelegate register = RegisterEvent;
             UnregisterEventDelegate unregister = UnregisterEvent;
             TriggerEventDelegate trigger = TriggerEvent;
+            TryGetEventDataDelegate getData = TryGetEventData;
             ShowBannerDelegate banner = ShowBanner;
             ShowBannerAtTargetDelegate bannerAtTarget = ShowBanner;
             ShowBannerAtPositionDelegate bannerAtPosition = ShowBanner;
@@ -41,6 +42,7 @@ namespace TwitchColony.Api
             GC.KeepAlive(register);
             GC.KeepAlive(unregister);
             GC.KeepAlive(trigger);
+            GC.KeepAlive(getData);
             GC.KeepAlive(banner);
             GC.KeepAlive(bannerAtTarget);
             GC.KeepAlive(bannerAtPosition);
@@ -154,6 +156,48 @@ namespace TwitchColony.Api
             catch (Exception e)
             {
                 Log.Warn($"TriggerEvent('{id}') threw: {e}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Look up a registered event's current state by id, without firing it: its weight and
+        ///     danger, whether its condition passes right now, and whether it's within the streamer's
+        ///     danger cap this cycle. Lets an add-on roll its own weighted choice over a subset of
+        ///     events (a "pick one of these weather events" event, say) and then <see cref="TriggerEvent"/>
+        ///     the winner.
+        ///
+        ///     The data comes back as a Dictionary&lt;string, object&gt; keyed by <see cref="EventData"/>
+        ///     — the merge-lib reads it into a typed EventDataInfo; our own struct can't cross the
+        ///     boundary. Reads only, so it's safe off the main thread, though the danger/condition it
+        ///     reports is a snapshot of the moment you asked.
+        /// </summary>
+        /// <param name="eventId">Id of a registered event — an add-on's or a built-in one.</param>
+        /// <param name="data">Filled with the event's state on success; null if there's no such id.</param>
+        /// <returns>true if the event was found; false otherwise.</returns>
+        public static bool TryGetEventData(string eventId, out Dictionary<string, object> data)
+        {
+            data = null;
+            try
+            {
+                if (string.IsNullOrEmpty(eventId))
+                {
+                    return false;
+                }
+
+                var ev = EventRegistry.ById(eventId);
+                if (ev == null)
+                {
+                    return false;
+                }
+
+                data = EventRegistry.DescribeEvent(ev);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Log.Warn($"TryGetEventData('{eventId}') threw: {e.Message}");
+                data = null;
                 return false;
             }
         }
