@@ -98,6 +98,18 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
+**Change notes for the 1.4.1 update:**
+
+```
+[b]Emoji no longer show up as boxes[/b] — the game's fonts have no emoji, so speech bubbles were sprouting little squares. The mod's own bubbles use short words now, and anything the font can't draw is dropped from a bubble instead of drawn as a box. That last part matters most for chat: viewers type emoji constantly. Normal text, accents and other alphabets are untouched.
+
+[b]The "Start Twitch Votes" button greys out the moment you click it[/b], instead of waiting until you reopen the pause menu.
+
+[b]For mod authors[/b] — the API can now trigger an event on demand for testing, and the library ships for netstandard2.1 as well as net48. See MODDING.md on GitHub.
+
+Thanks to Sgt_Imalas, who found all three while hooking his own events up to the API.
+```
+
 **Change notes for the 1.4.0 update** (the uploader asks for these separately from the description
 — they're what subscribers see in their update feed):
 
