@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using PeterHan.PLib.Options;
 using UnityEngine;
@@ -121,6 +122,21 @@ namespace TwitchColony.Config
             "(use the pause-menu button).", CAT_VOTING)]
         [Limit(0, 100)]
         public int StartAfterCycles { get; set; } = 0;
+
+        [Option("Highest danger allowed", "The worst thing chat can ever vote for. Events are tagged " +
+            "by what they actually do, and anything above this is never offered.", CAT_VOTING)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public DangerCap MaxEventDanger { get; set; } = DangerCap.Deadly;
+
+        [Option("Ramp danger with cycles", "Start gentle and work up: a young colony is only offered " +
+            "safe events, and the nastier ones unlock as it survives. Never goes past 'Highest " +
+            "danger allowed'. Turn off to allow everything from cycle 1.", CAT_VOTING)]
+        public bool ScaleDifficultyWithCycles { get; set; } = true;
+
+        [Option("Full danger at cycle", "The cycle by which everything up to your danger cap is " +
+            "unlocked. Earlier cycles unlock proportionally less.", CAT_VOTING)]
+        [Limit(5, 200)]
+        public int MaxDangerAtCycle { get; set; } = 30;
 
         [Option("Use native Twitch polls", "Run a real Twitch poll instead of counting chat messages. " +
             "Requires an Affiliate/Partner account and a token with poll scopes.", CAT_VOTING)]

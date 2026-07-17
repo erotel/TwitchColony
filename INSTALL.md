@@ -233,6 +233,9 @@ messages also pop up as bubbles above that critter, just like duplicants.
 |---|---|---|
 | `EnableEvents` | `true` | Master switch for the event/voting system. |
 | `StartAfterCycles` | `0` | Cycles to wait after the colony loads before the **first** vote auto-starts, giving the streamer time to prepare. `0` = don't auto-start; begin manually with the pause-menu button. The button still works to start earlier. Counted from load, so it works on both new and loaded colonies. |
+| `MaxEventDanger` | `"Deadly"` | The worst thing chat can **ever** vote for — a hard ceiling. `"Harmless"`, `"Annoying"`, `"Costly"`, `"Dangerous"`, `"Deadly"`. See [danger levels](#danger-levels-and-difficulty) below. |
+| `ScaleDifficultyWithCycles` | `true` | Start gentle: a young colony is only offered safe events, and nastier ones unlock as it survives. Never goes past `MaxEventDanger`. `false` = everything allowed from cycle 1. |
+| `MaxDangerAtCycle` | `30` | The cycle by which everything up to `MaxEventDanger` is unlocked. Earlier cycles unlock proportionally less. |
 | `UseTwitchPolls` | `false` | `false` = count chat votes; `true` = native Twitch poll (needs the poll scopes + Affiliate/Partner). |
 | `VotingSeconds` | `60` | Length of the voting window. |
 | `VoteDelay` | `540` | Seconds between one vote ending and the next starting (auto-restart). Default ≈ 9 minutes. The countdown **pauses while the game is paused.** |
@@ -240,6 +243,30 @@ messages also pop up as bubbles above that critter, just like duplicants.
 | `VoteCommandPrefix` | `"!vote"` | Chat-vote command; viewers type e.g. `!vote 2`. |
 | `AnnounceInChat` | `true` | Post the options and the winner into chat. Needs `Nick` + a token with `chat:edit`; otherwise it silently does nothing. |
 | `SurpriseBoxZoom` | `true` | The Surprise-Box event pans/zooms the camera to the box. Set `false` if you dislike the camera moving. |
+
+#### Danger levels and difficulty
+
+Every event is tagged with how much it can hurt, based on what it actually does:
+
+| Level | Means | Examples |
+|---|---|---|
+| `Harmless` | Cosmetic or pure upside. | Cheering, free research, raining gold, instant build. |
+| `Annoying` | Wastes time; breaks nothing. | Stress spike, sleepy dupes, interrupted work, a Pokeshell. |
+| `Costly` | Costs real resources or time. | Water flood, blackout, blighted crops, element dumps. |
+| `Dangerous` | Wrecks the colony if you don't react. | Global warming, ice age, oil/nuclear floods, a demolished building, Beetas. |
+| `Deadly` | **Duplicants can die.** | Grim reaper, lava and molten-gold floods, world-wide suffocation. |
+
+Two settings control this, and they work together:
+
+- **`MaxEventDanger`** is a hard ceiling that is never crossed, whatever else is configured. Set it
+  to `"Costly"` and chat simply cannot kill anyone, ever.
+- **`ScaleDifficultyWithCycles`** ramps *up to* that ceiling as the colony ages. With the defaults
+  (ceiling `Deadly`, full at cycle 30): cycles 1–7 are harmless only, `Annoying` unlocks around
+  cycle 8, `Costly` around 15, `Dangerous` around 23, and everything by cycle 30.
+
+If a filter would leave fewer than two things to vote on, the mod opens the danger up one step at a
+time until it has two — but **never past `MaxEventDanger`**. The "Surprise!" event obeys the ceiling
+too: it only picks from what chat could have voted for anyway.
 
 ### Twitch subs
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TwitchColony.Api;
 using System.Linq;
 using UnityEngine;
 
@@ -44,6 +45,7 @@ namespace TwitchColony.Events
     public sealed class SpawnPokeshellEvent : SpawnPrefabEventBase
     {
         public override string Id => "spawn_pokeshell";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Spawn a Pokeshell";
         protected override string PrefabId => CrabConfig.ID;
     }
@@ -51,6 +53,7 @@ namespace TwitchColony.Events
     public sealed class SpawnMooCometEvent : SpawnPrefabEventBase
     {
         public override string Id => "spawn_moo_comet";
+        public override int Danger => (int)EventDanger.Medium;
         public override string DisplayName => "Spawn a Gassy Moo comet";
         protected override string PrefabId => GassyMooCometConfig.ID;
     }
@@ -72,6 +75,7 @@ namespace TwitchColony.Events
     /// <summary>Base class for "rain N of a vanilla critter prefab from the sky".</summary>
     public abstract class RainCritterEventBase : GameEvent
     {
+        public override int Danger => (int)EventDanger.Small;
         public override string GroupId => "rain";
 
         protected abstract string PrefabId { get; }
@@ -87,6 +91,7 @@ namespace TwitchColony.Events
     public sealed class RainMorbEvent : RainCritterEventBase
     {
         public override string Id => "rain_morb";
+        public override int Danger => (int)EventDanger.Medium;
         public override string DisplayName => "Raining Morbs";
         protected override string PrefabId => GlomConfig.ID;
     }
@@ -108,6 +113,7 @@ namespace TwitchColony.Events
     public sealed class RainBeeEvent : RainCritterEventBase
     {
         public override string Id => "rain_bee";
+        public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Raining Beetas";
         protected override string PrefabId => BeeConfig.ID;
     }
@@ -209,6 +215,7 @@ namespace TwitchColony.Events
     public sealed class EclipseEvent : GameEvent
     {
         public override string Id => "eclipse";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Solar eclipse (darkness)";
 
         public override void Trigger()
@@ -226,13 +233,16 @@ namespace TwitchColony.Events
 
         public override void Trigger()
         {
-            var others = EventRegistry.AllEvents.Where(e => e.Id != Id).ToList();
-            if (others.Count == 0)
+            // Pick only from what chat would have been allowed to vote for anyway. Picking from
+            // every registered event (which is what this used to do) would tunnel straight through
+            // the danger cap: "harmless only" could still hand you a lava flood.
+            var pick = EventRegistry.PickRandomAllowed(Id);
+            if (pick == null)
             {
+                Log.Info("Event: Surprise -> nothing is eligible right now.");
                 return;
             }
 
-            var pick = others[Random.Range(0, others.Count)];
             Log.Info($"Event: Surprise -> {pick.DisplayName}");
             try
             {

@@ -136,6 +136,27 @@ namespace TwitchColony.Voting
         }
 
         /// <summary>
+        ///     Wipe every trace of the previous colony. This object is DontDestroyOnLoad, so it lives
+        ///     for the whole session and would otherwise carry its old state into the next colony —
+        ///     which left the machine parked in VoteDelay, greyed out the pause-menu button (it
+        ///     disables while a vote is "active"), and made StartAfterCycles do nothing, since that
+        ///     gate only ticks in the NotStarted state.
+        /// </summary>
+        public void ResetForNewColony()
+        {
+            State = VotingState.NotStarted;
+            options = new List<GameEvent>();
+            chatVotes.Clear();
+            pollId = null;
+            VoteTimeRemaining = 0f;
+            VoteDelayRemaining = 0f;
+            startCycle = -1;
+            cycleGateLogged = false;
+            CyclesUntilStart = 0;
+            ChatSay = null;
+        }
+
+        /// <summary>
         ///     Begin a new vote. Returns whether it actually started. Safe to call from the menu button;
         ///     the state machine also calls it automatically when the delay between votes elapses.
         /// </summary>
@@ -206,6 +227,20 @@ namespace TwitchColony.Voting
 
         private void Update()
         {
+            // This object is DontDestroyOnLoad, so it keeps ticking after the colony is gone — in
+            // the main menu, during world generation, everywhere. A vote left running when the
+            // colony unloaded would otherwise count down and fire its winning event into nothing
+            // (seen in testing: "Hello fired on cycle -1", eleven seconds after "Colony unloaded").
+            if (Game.Instance == null)
+            {
+                if (State != VotingState.NotStarted)
+                {
+                    ResetForNewColony();
+                }
+
+                return;
+            }
+
             var cfg = ModConfig.Instance;
 
             // "Bubbles only" mode (events disabled): park the machine back to idle.
@@ -252,9 +287,14 @@ namespace TwitchColony.Voting
                             VoteDelayRemaining -= Time.unscaledDeltaTime;
                         }
                     }
-                    else
+                    else if (!StartVote())
                     {
-                        StartVote();
+                        // Couldn't fill a vote — everything eligible got filtered out for the moment.
+                        // Wait out another delay and try again rather than parking in Error, which
+                        // the state machine never leaves on its own: one starved draw would
+                        // otherwise end voting for the rest of the session.
+                        VoteDelayRemaining = cfg.VoteDelay;
+                        State = VotingState.VoteDelay;
                     }
 
                     break;

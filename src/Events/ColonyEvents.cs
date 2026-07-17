@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TwitchColony.Api;
 using System.Linq;
 using HarmonyLib;
 using Klei.AI;
@@ -63,6 +64,7 @@ namespace TwitchColony.Events
     public sealed class StressSpikeEvent : GameEvent
     {
         public override string Id => "stress_spike";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Stress spike (+stress)";
 
         public override void Trigger()
@@ -102,6 +104,7 @@ namespace TwitchColony.Events
     public sealed class ExhaustionEvent : GameEvent
     {
         public override string Id => "exhaustion";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Sudden exhaustion (-stamina)";
 
         public override void Trigger()
@@ -115,6 +118,7 @@ namespace TwitchColony.Events
     public sealed class FullBladderEvent : GameEvent
     {
         public override string Id => "full_bladder";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Gotta go! (full bladder)";
 
         public override void Trigger()
@@ -168,6 +172,7 @@ namespace TwitchColony.Events
             AccessTools.MethodDelegate<System.Action<Health>>(AccessTools.DeclaredMethod(typeof(Health), "Kill"));
 
         public override string Id => "kill_dupe";
+        public override int Danger => (int)EventDanger.Deadly;
         public override string DisplayName => "Grim reaper (kill a dupe)";
 
         public override void Trigger()

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TwitchColony.Api;
 using HarmonyLib;
 using UnityEngine;
 
@@ -167,6 +168,7 @@ namespace TwitchColony.Events
     public sealed class BlackoutEvent : GameEvent
     {
         public override string Id => "blackout";
+        public override int Danger => (int)EventDanger.Medium;
         public override string DisplayName => "Blackout (drain batteries)";
         public override void Trigger()
         {
@@ -179,6 +181,7 @@ namespace TwitchColony.Events
     public sealed class WiltPlantsEvent : GameEvent
     {
         public override string Id => "wilt_plants";
+        public override int Danger => (int)EventDanger.Medium;
         public override string DisplayName => "Blight (set back crops)";
         public override void Trigger()
         {
@@ -191,6 +194,7 @@ namespace TwitchColony.Events
     public sealed class DemolishBuildingEvent : GameEvent
     {
         public override string Id => "demolish_building";
+        public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Wrecking ball (demolish a building)";
         public override void Trigger()
         {
@@ -239,6 +243,7 @@ namespace TwitchColony.Events
     public sealed class GatherDupesEvent : GameEvent
     {
         public override string Id => "gather_dupes";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Roll call (gather dupes at pod)";
         public override void Trigger()
         {
@@ -263,6 +268,7 @@ namespace TwitchColony.Events
     public sealed class ScatterDupesEvent : GameEvent
     {
         public override string Id => "scatter_dupes";
+        public override int Danger => (int)EventDanger.Medium;
         public override string DisplayName => "Teleport chaos (scatter dupes)";
         public override void Trigger()
         {
@@ -300,6 +306,7 @@ namespace TwitchColony.Events
     public sealed class InterruptWorkEvent : GameEvent
     {
         public override string Id => "interrupt_work";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Distraction (interrupt all work)";
         public override void Trigger()
         {

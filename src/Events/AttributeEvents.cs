@@ -1,3 +1,4 @@
+using TwitchColony.Api;
 namespace TwitchColony.Events
 {
     // Attribute buffs/debuffs and drowsiness — apply our own effects (see ModEffects) to every dupe.
@@ -14,6 +15,7 @@ namespace TwitchColony.Events
     public sealed class AthleticsDownEvent : GameEvent
     {
         public override string Id => "attr_athletics_down";
+        public override int Danger => (int)EventDanger.Small;
         public override string GroupId => "attribute";
         public override string DisplayName => "Sluggish (-athletics)";
         public override void Trigger() { Log.Info("Event: AthleticsDown"); ModEffects.ApplyToAll(ModEffects.AthleticsDown, "🐌"); }
@@ -30,6 +32,7 @@ namespace TwitchColony.Events
     public sealed class ConstructionDownEvent : GameEvent
     {
         public override string Id => "attr_construction_down";
+        public override int Danger => (int)EventDanger.Small;
         public override string GroupId => "attribute";
         public override string DisplayName => "Butterfingers (-construction)";
         public override void Trigger() { Log.Info("Event: ConstructionDown"); ModEffects.ApplyToAll(ModEffects.ConstructionDown, "🤕"); }
@@ -46,6 +49,7 @@ namespace TwitchColony.Events
     public sealed class ExcavationDownEvent : GameEvent
     {
         public override string Id => "attr_excavation_down";
+        public override int Danger => (int)EventDanger.Small;
         public override string GroupId => "attribute";
         public override string DisplayName => "Blunt tools (-excavation)";
         public override void Trigger() { Log.Info("Event: ExcavationDown"); ModEffects.ApplyToAll(ModEffects.ExcavationDown, "🪨"); }
@@ -62,6 +66,7 @@ namespace TwitchColony.Events
     public sealed class StrengthDownEvent : GameEvent
     {
         public override string Id => "attr_strength_down";
+        public override int Danger => (int)EventDanger.Small;
         public override string GroupId => "attribute";
         public override string DisplayName => "Weak knees (-strength)";
         public override void Trigger() { Log.Info("Event: StrengthDown"); ModEffects.ApplyToAll(ModEffects.StrengthDown, "🦵"); }
@@ -71,6 +76,7 @@ namespace TwitchColony.Events
     public sealed class SleepyDupesEvent : GameEvent
     {
         public override string Id => "sleepy_dupes";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Sleepy dupes (rapid tiredness)";
         public override void Trigger() { Log.Info("Event: SleepyDupes"); ModEffects.ApplyToAll(ModEffects.Sleepy, "💤"); }
     }
@@ -79,6 +85,7 @@ namespace TwitchColony.Events
     public sealed class SlowDupesEvent : GameEvent
     {
         public override string Id => "slow_dupes";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Slow dupes (30s sluggish)";
         public override void Trigger() { Log.Info("Event: SlowDupes"); ModEffects.ApplyToAll(ModEffects.SlowMo, "🐌"); }
     }
@@ -87,6 +94,7 @@ namespace TwitchColony.Events
     public sealed class SleepNowEvent : GameEvent
     {
         public override string Id => "sleep_now";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Nap time (send dupes to sleep)";
         public override void Trigger()
         {

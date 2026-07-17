@@ -1,4 +1,5 @@
 using UnityEngine;
+using TwitchColony.Api;
 
 namespace TwitchColony.Events
 {
@@ -8,6 +9,7 @@ namespace TwitchColony.Events
     public sealed class GlobalWarmingEvent : GameEvent
     {
         public override string Id => "global_warming";
+        public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Global warming (+heat)";
 
         public override void Trigger()
@@ -37,6 +39,7 @@ namespace TwitchColony.Events
     public sealed class IceAgeEvent : GameEvent
     {
         public override string Id => "ice_age";
+        public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Ice age (-heat)";
 
         public override void Trigger()
@@ -70,6 +73,7 @@ namespace TwitchColony.Events
     public sealed class ReduceOxygenEvent : GameEvent
     {
         public override string Id => "reduce_oxygen";
+        public override int Danger => (int)EventDanger.Deadly;
         public override string DisplayName => "Suffocation (remove oxygen)";
 
         private static readonly CellModifyMassEvent MassEvent =
@@ -101,6 +105,7 @@ namespace TwitchColony.Events
     /// <summary>Base class for "flood a patch near a random dupe with an element".</summary>
     public abstract class FloodEventBase : GameEvent
     {
+        public override int Danger => (int)EventDanger.Medium;
         /// <summary>All floods share a group, so chat isn't offered three of them in a row.</summary>
         public override string GroupId => "flood";
 
@@ -138,6 +143,7 @@ namespace TwitchColony.Events
     public sealed class FloodPollutedWaterEvent : FloodEventBase
     {
         public override string Id => "flood_polluted_water";
+        public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Flash flood (polluted water)";
         protected override SimHashes Element => SimHashes.DirtyWater;
     }
@@ -145,6 +151,7 @@ namespace TwitchColony.Events
     public sealed class FloodEthanolEvent : FloodEventBase
     {
         public override string Id => "flood_ethanol";
+        public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Flash flood (ethanol)";
         protected override SimHashes Element => SimHashes.Ethanol;
     }
@@ -152,6 +159,7 @@ namespace TwitchColony.Events
     public sealed class FloodOilEvent : FloodEventBase
     {
         public override string Id => "flood_oil";
+        public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Flash flood (crude oil)";
         protected override SimHashes Element => SimHashes.CrudeOil;
     }
@@ -159,6 +167,7 @@ namespace TwitchColony.Events
     public sealed class FloodLavaEvent : FloodEventBase
     {
         public override string Id => "flood_lava";
+        public override int Danger => (int)EventDanger.Deadly;
         public override string DisplayName => "Flash flood (LAVA!)";
         protected override SimHashes Element => SimHashes.Magma;
         protected override float Mass => 200f;
@@ -168,6 +177,7 @@ namespace TwitchColony.Events
     public sealed class FloodGoldEvent : FloodEventBase
     {
         public override string Id => "flood_gold";
+        public override int Danger => (int)EventDanger.Deadly;
         public override string DisplayName => "Flash flood (molten gold)";
         protected override SimHashes Element => SimHashes.MoltenGold;
         protected override float Mass => 500f;
@@ -176,6 +186,7 @@ namespace TwitchColony.Events
     public sealed class FloodNuclearWasteEvent : FloodEventBase
     {
         public override string Id => "flood_nuclear_waste";
+        public override int Danger => (int)EventDanger.High;
         public override string DisplayName => "Flash flood (nuclear waste)";
         protected override SimHashes Element => SimHashes.NuclearWaste;
         protected override string Bubble => "☢️";
@@ -184,6 +195,7 @@ namespace TwitchColony.Events
     /// <summary>Base class for "pick a random element from a pool and spawn a 3×3 patch near a dupe".</summary>
     public abstract class ElementPoolEventBase : GameEvent
     {
+        public override int Danger => (int)EventDanger.Medium;
         public override string GroupId => "element_dump";
 
         protected abstract SimHashes[] Pool { get; }
@@ -265,6 +277,7 @@ namespace TwitchColony.Events
     public sealed class PoopsplosionEvent : GameEvent
     {
         public override string Id => "poopsplosion";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Poopsplosion (polluted dirt)";
 
         public override void Trigger()
@@ -290,6 +303,7 @@ namespace TwitchColony.Events
     public sealed class FartEvent : GameEvent
     {
         public override string Id => "fart";
+        public override int Danger => (int)EventDanger.Small;
         public override string DisplayName => "Fart (methane)";
 
         public override void Trigger()
@@ -311,6 +325,7 @@ namespace TwitchColony.Events
     /// <summary>Base class for changing the temperature of solid tiles around a random dupe.</summary>
     public abstract class TileTempEventBase : GameEvent
     {
+        public override int Danger => (int)EventDanger.Medium;
         public override string GroupId => "tile_temperature";
 
         protected abstract float Delta { get; }

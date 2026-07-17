@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using TwitchColony.Api;
+using TwitchColony.Config;
 
 namespace TwitchColony.Events
 {
@@ -206,19 +207,23 @@ namespace TwitchColony.Events
             TickGroupCooldowns();
 
             var context = BuildDrawContext();
+            var cycle = EventContext.GetInt(context, EventContext.Cycle, -1);
+            var allowed = AllowedDanger(cycle);
+            var hardCap = (int)ModConfig.Instance.MaxEventDanger;
+
             var pool = new List<GameEvent>();
             var weights = new List<int>();
+            BuildPool(allowed, context, pool, weights);
 
-            foreach (var ev in All)
+            // A vote with one option isn't a vote. If the danger cap plus the events' own conditions
+            // starved the pool, open the cap up a step at a time — but never past what the streamer
+            // allowed, because that's a promise, not a preference. If we still can't fill two, the
+            // caller decides what to do.
+            while (pool.Count < 2 && allowed < hardCap)
             {
-                var weight = EffectiveWeight(ev);
-                if (weight <= 0 || !CanRunSafely(ev, context))
-                {
-                    continue;
-                }
-
-                pool.Add(ev);
-                weights.Add(weight);
+                allowed++;
+                BuildPool(allowed, context, pool, weights);
+                Log.Info($"Not enough events to vote on; allowing danger up to {allowed} this round.");
             }
 
             var chosen = new List<GameEvent>();
@@ -232,6 +237,76 @@ namespace TwitchColony.Events
             }
 
             return chosen;
+        }
+
+        /// <summary>
+        ///     Pick one random event that is allowed right now — same danger cap, conditions and
+        ///     weights as a vote draw. Used by the Surprise event, which would otherwise be a hole
+        ///     straight through the danger cap: it fires an event of its own choosing.
+        /// </summary>
+        internal static GameEvent PickRandomAllowed(string excludeId)
+        {
+            var context = BuildDrawContext();
+            var pool = new List<GameEvent>();
+            var weights = new List<int>();
+            BuildPool(AllowedDanger(EventContext.GetInt(context, EventContext.Cycle, -1)), context,
+                pool, weights, excludeId);
+
+            if (pool.Count == 0)
+            {
+                return null;
+            }
+
+            return pool[TakeWeightedIndex(weights)];
+        }
+
+        /// <summary>Everything eligible right now, with the weight it should be drawn at.</summary>
+        private static void BuildPool(int allowedDanger, object context, List<GameEvent> pool,
+            List<int> weights, string excludeId = null)
+        {
+            pool.Clear();
+            weights.Clear();
+
+            foreach (var ev in All)
+            {
+                if (ev.Id == excludeId || ev.Danger > allowedDanger)
+                {
+                    continue;
+                }
+
+                var weight = EffectiveWeight(ev);
+                if (weight <= 0 || !CanRunSafely(ev, context))
+                {
+                    continue;
+                }
+
+                pool.Add(ev);
+                weights.Add(weight);
+            }
+        }
+
+        /// <summary>
+        ///     The worst danger chat may be offered at this cycle. With ramping off it's simply the
+        ///     configured cap; with it on, the cap opens up linearly and reaches the configured
+        ///     ceiling at MaxDangerAtCycle. An unknown cycle (no clock yet) doesn't restrict
+        ///     anything — the alternative would be an empty vote for anyone whose game hasn't
+        ///     finished loading.
+        /// </summary>
+        internal static int AllowedDanger(int cycle)
+        {
+            var cfg = ModConfig.Instance;
+            var cap = (int)cfg.MaxEventDanger;
+
+            // A hand-edited "full danger at cycle 0" means "don't hold anything back", so take it at
+            // its word instead of ramping over a single cycle.
+            var fullAt = cfg.MaxDangerAtCycle;
+            if (!cfg.ScaleDifficultyWithCycles || cycle < 0 || fullAt <= 0 || cycle >= fullAt)
+            {
+                return cap;
+            }
+
+            var allowed = (int)System.Math.Floor((double)cap * cycle / fullAt);
+            return System.Math.Min(cap, System.Math.Max(0, allowed));
         }
 
         /// <summary>

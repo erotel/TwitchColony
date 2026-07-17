@@ -17,21 +17,31 @@ namespace TwitchColony
     {
         internal static IrcClient client;
 
+        /// <summary>
+        ///     The Game the current client belongs to. Used to tell "my colony is being unloaded"
+        ///     apart from "a colony I already replaced is being unloaded late" — the teardown and
+        ///     the next OnSpawn don't have a guaranteed order.
+        /// </summary>
+        private static Game owner;
+
         // ReSharper disable once UnusedMember.Local
-        private static void Postfix()
+        private static void Postfix(Game __instance)
         {
-            // Guard against Game.OnSpawn running twice: only one runtime + IRC client per colony,
-            // otherwise two clients log in with the same nick and fight over the connection.
-            if (client != null)
-            {
-                Log.Warn("Runtime already started; ignoring duplicate OnSpawn.");
-                return;
-            }
+            // Never assume the last colony cleaned up after itself: Game.OnCleanUp doesn't run when
+            // you go straight from a running colony into a new game, so its IRC client can still be
+            // attached here. Tear it down and start fresh rather than bailing out — bailing out left
+            // the new colony with no runtime at all, a dead vote loop and a greyed-out menu button.
+            // (This also keeps us safe if OnSpawn ever fires twice for one colony: one client only,
+            // or two logins with the same nick fight over the connection.)
+            Shutdown();
 
             MainThread.Ensure();
             EventRegistry.RegisterDefaults();
             CritterAdoption.Reset();
-            VoteController.Ensure();
+
+            // The controller and HUD are DontDestroyOnLoad, so they outlive the colony that made
+            // them and must be told to forget it.
+            VoteController.Ensure().ResetForNewColony();
             VoteHud.Ensure();
 
             var cfg = ModConfig.Instance;
@@ -79,21 +89,63 @@ namespace TwitchColony
                 });
             };
             client.Start();
+            owner = __instance;
 
             Log.Info("Runtime started for this colony.");
         }
+
+        /// <summary>Drop the Twitch connection of whatever colony was running, if any.</summary>
+        internal static void Shutdown()
+        {
+            if (client == null)
+            {
+                return;
+            }
+
+            client.Stop();
+            client = null;
+            owner = null;
+        }
+
+        /// <summary>
+        ///     Called from both teardown paths. Ignores a colony we've already moved on from, so a
+        ///     late teardown can't cut the connection of the colony that replaced it.
+        /// </summary>
+        internal static void ShutdownIfOwnedBy(Game game)
+        {
+            if (client == null || !ReferenceEquals(owner, game))
+            {
+                return;
+            }
+
+            Shutdown();
+
+            // Stop the vote loop with the colony. It survives the unload (DontDestroyOnLoad), and a
+            // vote still counting down would resolve in the main menu and trigger its event with no
+            // colony to trigger it in.
+            VoteController.Instance?.ResetForNewColony();
+
+            Log.Info("Colony unloaded.");
+        }
     }
 
-    /// <summary>Stop the IRC connection cleanly when leaving the game.</summary>
+    /// <summary>Stop the IRC connection cleanly when a colony is unloaded normally.</summary>
     [HarmonyPatch(typeof(Game), "OnCleanUp")]
     internal static class Game_OnCleanUp_Patch
     {
         // ReSharper disable once UnusedMember.Local
-        private static void Prefix()
-        {
-            Game_OnSpawn_Patch.client?.Stop();
-            Game_OnSpawn_Patch.client = null;
-            Log.Info("Colony unloaded.");
-        }
+        private static void Prefix(Game __instance) => Game_OnSpawn_Patch.ShutdownIfOwnedBy(__instance);
+    }
+
+    /// <summary>
+    ///     The other teardown path. Klei tears the scene down through OnForcedCleanUp when you go
+    ///     straight from a running colony into another game, and OnCleanUp never runs — so patching
+    ///     only that one left the bot connected to chat with no colony behind it.
+    /// </summary>
+    [HarmonyPatch(typeof(Game), "OnForcedCleanUp")]
+    internal static class Game_OnForcedCleanUp_Patch
+    {
+        // ReSharper disable once UnusedMember.Local
+        private static void Prefix(Game __instance) => Game_OnSpawn_Patch.ShutdownIfOwnedBy(__instance);
     }
 }
