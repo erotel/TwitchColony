@@ -75,7 +75,7 @@ re-publish. Same Workshop item, new build.
 [*][b]Chat bubbles[/b] — a viewer's message pops up as a speech bubble above the duplicant whose name matches their Twitch nick.
 [*][b]Event voting[/b] — chat votes on what happens to your colony next, either by typing in chat (!vote 1/2/3) or in a native Twitch poll.
 [*][b]73 events[/b] — stress spikes and group therapy, instant builds/digs/research, floods and element dumps, raining critters, turbo/sleepy dupes, care packages, blackouts, heat waves… up to lava, if you allow it.
-[*][b]Critter adoption[/b] — a viewer types !adopt and a critter is named after them, with their nick on a tag under it. Their chat then bubbles above their critter.
+[*][b]Critter adoption[/b] — a viewer types !adopt and a critter is named after them (nearest the printing pod first), with their nick on a tag under it. The mod can also name critters after chat on its own. Their chat then bubbles above their critter.
 [*][b]Sub celebrations[/b] — a NEW SUB banner, a party popper over the duplicants, and the whole colony stops to cheer.
 [/list]
 
@@ -98,7 +98,7 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
-**Change notes for the 1.4.5 update.** The Workshop is still on 1.3.0, so this covers everything
+**Change notes for the 1.4.6 update.** The Workshop is still on 1.3.0, so this covers everything
 since — use this one and ignore the older blocks below.
 
 ```
@@ -107,6 +107,8 @@ since — use this one and ignore the older blocks below.
 [b]You control how dangerous chat can get[/b] — every event is tagged from harmless to deadly, and you set the ceiling chat can never cross. It can also ramp up with cycles, so the first cycles stay safe while you get set up. On by default; turn it off for the old free-for-all.
 
 [b]Subs are celebrated[/b] — a NEW SUB banner, a party popper floating over the duplicants, and the whole colony cheering. No extra login or scopes needed; works even on the anonymous connection.
+
+[b]Critters name themselves after chat[/b] — as well as the !adopt command, the mod can quietly name free critters after random people from chat (nearest the printing pod first, working outward). On by default, on a timer you can set.
 
 [b]Drag the vote panel wherever you like[/b] — top centre is a bad guess when you have a camera and an overlay to work around. It remembers where you put it. The whole UI also follows the game's UI scale setting now, which it embarrassingly didn't before: at 4K it was a postage stamp.
 
@@ -163,6 +165,8 @@ Thanks to Sgt_Imalas, who found all three while hooking his own events up to the
 [b]You control how dangerous chat can get[/b] — every event is tagged from harmless to deadly, and you set the ceiling chat can never cross. It can also ramp up with cycles, so the first cycles stay safe while you get set up. On by default; turn it off for the old free-for-all.
 
 [b]Subs are celebrated[/b] — a NEW SUB banner, a party popper floating over the duplicants, and the whole colony cheering. No extra login or scopes needed; works even on the anonymous connection.
+
+[b]Critters name themselves after chat[/b] — as well as the !adopt command, the mod can quietly name free critters after random people from chat (nearest the printing pod first, working outward). On by default, on a timer you can set.
 
 [b]Your OAuth token moved[/b] to its own file (mods/config/TwitchColony/token.txt) and is deliberately not on the settings screen — a token shown on stream is a password shown on stream. An existing token is moved for you.
 
