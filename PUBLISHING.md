@@ -98,8 +98,9 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
-**Change notes for the 1.4.6 update.** The Workshop is still on 1.3.0, so this covers everything
-since — use this one and ignore the older blocks below.
+**Change notes for the 1.4.7 update.** The Workshop is still on 1.3.0, so this covers everything
+since — use this one and ignore the older blocks below. (1.4.7 itself is a modding-API addition with
+no player-facing change; the note is folded into the "Mods can add their own events" line below.)
 
 ```
 [b]Settings are in the game now[/b] — Mods → the gear icon next to Twitch Colony. Channel, bubbles, voting, adoption and subs, all on one screen. Your old config.json is imported automatically; editing files still works if you prefer.
@@ -127,7 +128,7 @@ since — use this one and ignore the older blocks below.
 [*]Chat bubbles and critter name tags no longer draw on top of the pause menu.
 [/list]
 
-[b]Mods can add their own events now[/b] — there's a proper modding API, and add-ons using it don't force players to install this mod. See MODDING.md on GitHub.
+[b]Mods can add their own events now[/b] — there's a proper modding API, and add-ons using it don't force players to install this mod. An add-on's event can also read another event's state and roll its own weighted pick over a set of them (a "random weather" event, say). See MODDING.md on GitHub.
 
 Thanks to Sgt_Imalas, who found a great deal of this while hooking his own event mod up to the API.
 ```
