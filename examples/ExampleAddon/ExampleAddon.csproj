@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A minimal add-on that registers its own events with Twitch Colony.
+       It is built exactly the way a real add-on is built: reference TwitchColony.Api.dll, merge it
+       in, and never reference TwitchColony.dll itself. That's what makes this a real test of the
+       API rather than a demo of it — if Twitch Colony isn't installed, this mod still loads and
+       runs, it just registers nothing. -->
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <OutputType>Library</OutputType>
+    <AssemblyName>TwitchColonyExampleAddon</AssemblyName>
+    <RootNamespace>TwitchColonyExampleAddon</RootNamespace>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LibFolder>$(MSBuildProjectDirectory)/../../lib</LibFolder>
+    <ApiFolder>$(MSBuildProjectDirectory)/../../Api/bin/Release</ApiFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.46" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Private=false like everything else: ILRepack reads the API straight from $(ApiFolder), so
+       nothing needs to be copied into the output folder. Letting MSBuild copy it there would drag
+       its transitive references (netstandard, UnityEngine.*) along for the ride, and a mod folder
+       should hold exactly one DLL. -->
+  <ItemGroup>
+    <Reference Include="TwitchColony.Api">
+      <HintPath>$(ApiFolder)/TwitchColony.Api.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(LibFolder)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(LibFolder)/0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(LibFolder)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

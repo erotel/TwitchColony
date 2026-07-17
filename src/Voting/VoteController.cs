@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using HarmonyLib;
+using TwitchColony.Api;
 using TwitchColony.Config;
 using TwitchColony.Events;
 using TwitchColony.Twitch;
@@ -354,15 +355,48 @@ namespace TwitchColony.Voting
 
             Log.Info($"Chat winner: {options[best].DisplayName} ({tally[best]} votes)");
             AnnounceWinner(options[best]);
-            TriggerSafely(options[best]);
+
+            var voters = new List<string>();
+            foreach (var kv in chatVotes)
+            {
+                if (kv.Value == best)
+                {
+                    voters.Add(kv.Key);
+                }
+            }
+
+            TriggerSafely(options[best],
+                BuildContext(options[best], EventContext.SourceChatVote, tally[best], voters.ToArray()));
+        }
+
+        /// <summary>
+        ///     What an event's action is told about the vote that ran it. A plain dictionary of BCL
+        ///     types on purpose — see <see cref="EventContext"/>. Add keys freely; never remove one,
+        ///     add-ons read them by name.
+        /// </summary>
+        private static Dictionary<string, object> BuildContext(GameEvent ev, string source, int votes,
+            string[] voters)
+        {
+            return new Dictionary<string, object>
+            {
+                { EventContext.EventId, ev.Id },
+                { EventContext.Cycle, CurrentCycle() },
+                { EventContext.Source, source },
+                { EventContext.VoteCount, votes },
+                { EventContext.Voters, voters ?? new string[0] },
+            };
         }
 
         /// <summary>Run an event's effect without letting a thrown exception stall the state machine.</summary>
-        private static void TriggerSafely(GameEvent ev)
+        private static void TriggerSafely(GameEvent ev, object context)
         {
+            // Note it before running: an event that throws still counts as "just happened" for the
+            // group cooldown, or a broken event would keep being offered.
+            EventRegistry.NoteTriggered(ev);
+
             try
             {
-                ev.Trigger();
+                ev.Trigger(context);
             }
             catch (System.Exception e)
             {
@@ -419,7 +453,7 @@ namespace TwitchColony.Voting
                     {
                         Log.Warn("Poll returned no results; picking first option.");
                         AnnounceWinner(captured[0]);
-                        TriggerSafely(captured[0]);
+                        TriggerSafely(captured[0], BuildContext(captured[0], EventContext.SourcePoll, 0, null));
                         return;
                     }
 
@@ -434,7 +468,10 @@ namespace TwitchColony.Voting
 
                     Log.Info($"Poll winner: {captured[best].DisplayName} ({poll.Choices[best].Votes} votes)");
                     AnnounceWinner(captured[best]);
-                    TriggerSafely(captured[best]);
+
+                    // Twitch reports vote totals, not who voted — hence no voters here.
+                    TriggerSafely(captured[best],
+                        BuildContext(captured[best], EventContext.SourcePoll, poll.Choices[best].Votes, null));
                 });
             }) { IsBackground = true };
             thread.Start();

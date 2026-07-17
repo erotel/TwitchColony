@@ -21,6 +21,12 @@
     <LibFolder>$(MSBuildProjectDirectory)/../lib</LibFolder>
   </PropertyGroup>
 
+  <!-- The API contract, compiled into this DLL and into TwitchColony.Api.dll from the SAME source.
+       Not a shared DLL on purpose: see Shared/ApiContract.cs. -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildProjectDirectory)/../Shared/**/*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
     <!-- PLib: in-game mod options UI. Merged into our DLL below (see the ILRepack target). -->

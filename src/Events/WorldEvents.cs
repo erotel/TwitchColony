@@ -101,6 +101,9 @@ namespace TwitchColony.Events
     /// <summary>Base class for "flood a patch near a random dupe with an element".</summary>
     public abstract class FloodEventBase : GameEvent
     {
+        /// <summary>All floods share a group, so chat isn't offered three of them in a row.</summary>
+        public override string GroupId => "flood";
+
         protected abstract SimHashes Element { get; }
         protected virtual float Mass => 1000f;
         protected virtual int Radius => 3;
@@ -181,6 +184,8 @@ namespace TwitchColony.Events
     /// <summary>Base class for "pick a random element from a pool and spawn a 3×3 patch near a dupe".</summary>
     public abstract class ElementPoolEventBase : GameEvent
     {
+        public override string GroupId => "element_dump";
+
         protected abstract SimHashes[] Pool { get; }
         protected virtual float Mass => 1400f;
 
@@ -306,6 +311,8 @@ namespace TwitchColony.Events
     /// <summary>Base class for changing the temperature of solid tiles around a random dupe.</summary>
     public abstract class TileTempEventBase : GameEvent
     {
+        public override string GroupId => "tile_temperature";
+
         protected abstract float Delta { get; }
         protected abstract SimMessages.EnergySourceID Source { get; }
 

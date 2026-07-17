@@ -38,6 +38,14 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 DEALINGS IN THE SOFTWARE.
 ```
 
+## Thanks
+
+- **Sgt_Imalas** — for the review that shaped the modding API. The shared-types-plus-reflection
+  design (and the merge-lib that goes with it) is the one he arrived at building the mod API for
+  the [Oni-Together](https://github.com/Lyraedan/Oxygen_Not_Included_Together) multiplayer mod, and
+  he explained why our first attempt could never have worked from another assembly. He also spotted
+  that we were calling `PatchAll` twice.
+
 ## Contributors
 
 - **Martin Zatloukal** — author, design, and testing.

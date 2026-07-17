@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <OutputType>Library</OutputType>
+    <AssemblyName>TwitchColony.Api</AssemblyName>
+    <RootNamespace>TwitchColony.Api</RootNamespace>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Shipped to other mod authors, who ILMerge it into their own DLL. -->
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LibFolder>$(MSBuildProjectDirectory)/../lib</LibFolder>
+  </PropertyGroup>
+
+  <!-- Same source as the main mod compiles, so the contract cannot drift. NOT a shared DLL:
+       see Shared/ApiContract.cs for why that would break. -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildProjectDirectory)/../Shared/**/*.cs" LinkBase="Shared" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Only UnityEngine, and only to write to Player.log. Everything that reaches Twitch Colony goes
+       through reflection over BCL types, so this library never needs the mod itself to build or to
+       load — that's what lets an add-on ship it and still run when Twitch Colony isn't installed. -->
+  <ItemGroup>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(LibFolder)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

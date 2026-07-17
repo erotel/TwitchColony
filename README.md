@@ -62,47 +62,34 @@ To add events **inside this repo**, subclass `GameEvent` and register them in
 
 Other mods can contribute their own events without touching this repo. Your event joins the
 vote pool, the on-screen HUD, and the chat announcements automatically — you only implement its
-effect.
+effect. **Twitch Colony doesn't have to be installed:** the API library reaches it by reflection,
+so on a machine without it your registration just returns `false` and your mod runs on regardless.
 
-1. Reference `TwitchColony.dll` from your project (`Private=false`, so you don't bundle a copy):
-   ```xml
-   <Reference Include="TwitchColony">
-     <HintPath>path\to\TwitchColony.dll</HintPath>
-     <Private>false</Private>
-   </Reference>
-   ```
-2. Subclass `GameEvent` and register it once from your `UserMod2.OnLoad`:
-   ```csharp
-   using HarmonyLib;
-   using KMod;
-   using TwitchColony.Events;
+Merge `TwitchColony.Api.dll` ([releases](https://github.com/erotel/TwitchColony/releases), or
+`dist/api/` after a build) into your mod and call:
 
-   public sealed class MyEvent : GameEvent
-   {
-       public override string Id => "mymod.confetti";        // unique; duplicate Ids are ignored
-       public override string DisplayName => "Confetti storm"; // shown in the vote / HUD / chat
-       public override void Trigger()                          // runs on the main thread when it wins
-       {
-           // your effect here, using vanilla game API
-       }
-   }
+```csharp
+using TwitchColony.Api;
 
-   public sealed class MyMod : UserMod2
-   {
-       public override void OnLoad(Harmony harmony)
-       {
-           base.OnLoad(harmony);
-           EventRegistry.AddEvent(new MyEvent());
-       }
-   }
-   ```
+public override void OnLoad(Harmony harmony) {
+    base.OnLoad(harmony);
 
-Notes:
-- `AddEvent` persists across colony reloads; call it once at load. Duplicate `Id`s are ignored.
-- Advanced: subscribe to `EventRegistry.Registering` to add events on every colony load.
-- The public API is intentionally tiny and stable: `GameEvent` (`Id`, `DisplayName`, `Trigger`)
-  and `EventRegistry.AddEvent` / `Registering`. `Trigger()` is always called on the main thread.
-- Twitch Colony must be installed and enabled for your events to appear; it stays a single DLL.
+    TwitchColonyApi.RegisterEvent(
+        id:          "mymod.confetti",       // unique; prefix it with your mod name
+        displayName: "Confetti storm",       // what chat sees
+        action:      ctx => Confetti.Drop(), // runs on the main thread when it wins
+        weight:      EventWeight.Uncommon,
+        danger:      EventDanger.None,
+        owner:       "My Mod");
+}
+```
+
+Events can also declare a **group** (similar events get damped together so chat isn't offered
+three floods in a row), a **danger** level, and a **condition** (e.g. only from cycle 20).
+
+**See [MODDING.md](MODDING.md) for the full guide** — the payload your action receives, groups,
+weights, danger, conditions, versioning, and why the API is built out of delegates and
+dictionaries instead of interfaces.
 
 > **Not runtime-tested.** The build server cannot run the game, so events are compile-verified
 > only. Verify behavior on a Windows machine with the game and watch `Player.log` for
@@ -143,13 +130,16 @@ directly in that folder), enable the mod, load a colony, set `Channel` in the ge
 ## Layout
 
 ```
-src/
-  TwitchColonyMod.cs      UserMod2 entry + Harmony bootstrap
+Shared/                   API contract, compiled into BOTH DLLs from the same source
+src/                      the mod itself -> TwitchColony.dll
+  TwitchColonyMod.cs      UserMod2 entry + Harmony bootstrap + PLib options
   Patches.cs              Game.OnSpawn hook that starts the runtime
   MainThread.cs           background→main-thread dispatcher
-  Config/ModConfig.cs     JSON config
+  Config/ModConfig.cs     settings (in-game via PLib, or config.json)
+  Api/EventBridge.cs      what other mods reflect into
   Twitch/                 IRC client + parser, Helix polls, token auth
   Voting/VoteController.cs chat + poll voting
-  Events/                 event base, registry, sample events
+  Events/                 event base, registry, the built-in events
   UI/SpeechBubbles.cs     chat speech bubbles
+Api/                      merge-lib for add-on authors -> TwitchColony.Api.dll
 ```

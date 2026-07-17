@@ -1,0 +1,3 @@
+title: "Twitch Colony — Example Add-on"
+description: "Test/example mod: registers its own events with Twitch Colony through the TwitchColony.Api merge-lib. Harmless — its events only write to the log."
+staticID: TwitchColonyExampleAddon

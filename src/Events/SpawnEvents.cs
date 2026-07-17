@@ -9,6 +9,8 @@ namespace TwitchColony.Events
     /// <summary>Base class for "instantiate one vanilla prefab near a random dupe".</summary>
     public abstract class SpawnPrefabEventBase : GameEvent
     {
+        public override string GroupId => "spawn";
+
         protected abstract string PrefabId { get; }
 
         public override void Trigger()
@@ -70,6 +72,8 @@ namespace TwitchColony.Events
     /// <summary>Base class for "rain N of a vanilla critter prefab from the sky".</summary>
     public abstract class RainCritterEventBase : GameEvent
     {
+        public override string GroupId => "rain";
+
         protected abstract string PrefabId { get; }
         protected virtual int Count => 10;
 

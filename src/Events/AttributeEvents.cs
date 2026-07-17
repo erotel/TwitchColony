@@ -6,6 +6,7 @@ namespace TwitchColony.Events
     public sealed class AthleticsUpEvent : GameEvent
     {
         public override string Id => "attr_athletics_up";
+        public override string GroupId => "attribute";
         public override string DisplayName => "Adrenaline rush (+athletics)";
         public override void Trigger() { Log.Info("Event: AthleticsUp"); ModEffects.ApplyToAll(ModEffects.AthleticsUp, "🏃"); }
     }
@@ -13,6 +14,7 @@ namespace TwitchColony.Events
     public sealed class AthleticsDownEvent : GameEvent
     {
         public override string Id => "attr_athletics_down";
+        public override string GroupId => "attribute";
         public override string DisplayName => "Sluggish (-athletics)";
         public override void Trigger() { Log.Info("Event: AthleticsDown"); ModEffects.ApplyToAll(ModEffects.AthleticsDown, "🐌"); }
     }
@@ -20,6 +22,7 @@ namespace TwitchColony.Events
     public sealed class ConstructionUpEvent : GameEvent
     {
         public override string Id => "attr_construction_up";
+        public override string GroupId => "attribute";
         public override string DisplayName => "In the zone (+construction)";
         public override void Trigger() { Log.Info("Event: ConstructionUp"); ModEffects.ApplyToAll(ModEffects.ConstructionUp, "🔨"); }
     }
@@ -27,6 +30,7 @@ namespace TwitchColony.Events
     public sealed class ConstructionDownEvent : GameEvent
     {
         public override string Id => "attr_construction_down";
+        public override string GroupId => "attribute";
         public override string DisplayName => "Butterfingers (-construction)";
         public override void Trigger() { Log.Info("Event: ConstructionDown"); ModEffects.ApplyToAll(ModEffects.ConstructionDown, "🤕"); }
     }
@@ -34,6 +38,7 @@ namespace TwitchColony.Events
     public sealed class ExcavationUpEvent : GameEvent
     {
         public override string Id => "attr_excavation_up";
+        public override string GroupId => "attribute";
         public override string DisplayName => "Digger's high (+excavation)";
         public override void Trigger() { Log.Info("Event: ExcavationUp"); ModEffects.ApplyToAll(ModEffects.ExcavationUp, "⛏️"); }
     }
@@ -41,6 +46,7 @@ namespace TwitchColony.Events
     public sealed class ExcavationDownEvent : GameEvent
     {
         public override string Id => "attr_excavation_down";
+        public override string GroupId => "attribute";
         public override string DisplayName => "Blunt tools (-excavation)";
         public override void Trigger() { Log.Info("Event: ExcavationDown"); ModEffects.ApplyToAll(ModEffects.ExcavationDown, "🪨"); }
     }
@@ -48,6 +54,7 @@ namespace TwitchColony.Events
     public sealed class StrengthUpEvent : GameEvent
     {
         public override string Id => "attr_strength_up";
+        public override string GroupId => "attribute";
         public override string DisplayName => "Pumped up (+strength)";
         public override void Trigger() { Log.Info("Event: StrengthUp"); ModEffects.ApplyToAll(ModEffects.StrengthUp, "💪"); }
     }
@@ -55,6 +62,7 @@ namespace TwitchColony.Events
     public sealed class StrengthDownEvent : GameEvent
     {
         public override string Id => "attr_strength_down";
+        public override string GroupId => "attribute";
         public override string DisplayName => "Weak knees (-strength)";
         public override void Trigger() { Log.Info("Event: StrengthDown"); ModEffects.ApplyToAll(ModEffects.StrengthDown, "🦵"); }
     }

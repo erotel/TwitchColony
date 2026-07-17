@@ -1,15 +1,15 @@
 using System.Collections.Generic;
+using TwitchColony.Api;
 
 namespace TwitchColony.Events
 {
     /// <summary>
-    ///     Holds all registered events and picks a random subset for each vote.
+    ///     Holds all registered events and picks a weighted random subset for each vote.
     ///
-    ///     MODDING API: other mods can contribute their own events. Reference this assembly
-    ///     (TwitchColony.dll, Private=false), subclass <see cref="GameEvent"/>, and call
-    ///     <see cref="AddEvent"/> once from your UserMod2.OnLoad — the event then joins the vote
-    ///     pool, HUD, and chat announcements automatically. External events persist across colony
-    ///     reloads. Advanced: subscribe to <see cref="Registering"/> to add events on each load.
+    ///     MODDING API: other mods contribute events through <see cref="Api.EventBridge"/> — see
+    ///     MODDING.md. Don't point add-on authors at <see cref="AddEvent"/>: subclassing
+    ///     <see cref="GameEvent"/> forces a hard reference to this assembly, so their mod dies when
+    ///     Twitch Colony isn't installed. It stays for our own use and for anyone who accepts that.
     /// </summary>
     public static class EventRegistry
     {
@@ -17,6 +17,15 @@ namespace TwitchColony.Events
 
         // Events contributed by other mods; re-added on every colony load (they survive the clear).
         private static readonly List<GameEvent> External = new List<GameEvent>();
+
+        /// <summary>
+        ///     Groups that fired recently, and how many more draws they stay damped for. Keeps chat
+        ///     from being offered three floods in a row just because the dice said so.
+        /// </summary>
+        private static readonly Dictionary<string, int> GroupCooldowns = new Dictionary<string, int>();
+
+        /// <summary>Draws over which a fired event's group stays less likely.</summary>
+        private const int GroupCooldownDraws = 3;
 
         /// <summary>Raised after the default + external events are registered on each colony load.</summary>
         public static event System.Action Registering;
@@ -28,23 +37,45 @@ namespace TwitchColony.Events
         /// </summary>
         public static void AddEvent(GameEvent ev)
         {
+            if (AddExternal(ev))
+            {
+                Log.Info($"External event registered: {ev.Id}");
+            }
+        }
+
+        /// <summary>
+        ///     Remember an external event and make it live right away if a colony is already loaded.
+        ///     Returns false if it's unusable or the id is taken.
+        /// </summary>
+        internal static bool AddExternal(GameEvent ev)
+        {
             if (ev == null || string.IsNullOrEmpty(ev.Id))
             {
-                return;
+                return false;
             }
 
-            if (!External.Exists(e => e.Id == ev.Id))
+            if (External.Exists(e => e.Id == ev.Id))
             {
-                External.Add(ev);
+                return false;
             }
 
+            External.Add(ev);
             Register(ev); // make it available immediately if a colony is already loaded
-            Log.Info($"External event registered: {ev.Id}");
+            return true;
+        }
+
+        /// <summary>Drop an external event. Returns true if it was registered.</summary>
+        internal static bool RemoveExternal(string id)
+        {
+            var removed = External.RemoveAll(e => e.Id == id) > 0;
+            All.RemoveAll(e => e.Id == id);
+            return removed;
         }
 
         public static void RegisterDefaults()
         {
             All.Clear();
+            ResetGroupCooldowns(); // A fresh colony shouldn't inherit what the last one rolled.
 
             // Register our own duplicant effects (attribute buffs, drowsiness) before the events use them.
             ModEffects.EnsureRegistered();
@@ -165,20 +196,158 @@ namespace TwitchColony.Events
 
         public static IReadOnlyList<GameEvent> AllEvents => All;
 
-        /// <summary>Pick up to <paramref name="count"/> distinct random events for a vote.</summary>
+        /// <summary>
+        ///     Pick up to <paramref name="count"/> distinct events for a vote, weighted by
+        ///     <see cref="GameEvent.Weight"/>, skipping anything whose <see cref="GameEvent.CanRun"/>
+        ///     says no, and damping groups that fired recently.
+        /// </summary>
         public static List<GameEvent> PickForVote(int count)
         {
-            var pool = new List<GameEvent>(All);
+            TickGroupCooldowns();
+
+            var context = BuildDrawContext();
+            var pool = new List<GameEvent>();
+            var weights = new List<int>();
+
+            foreach (var ev in All)
+            {
+                var weight = EffectiveWeight(ev);
+                if (weight <= 0 || !CanRunSafely(ev, context))
+                {
+                    continue;
+                }
+
+                pool.Add(ev);
+                weights.Add(weight);
+            }
+
             var chosen = new List<GameEvent>();
             count = System.Math.Min(count, pool.Count);
             for (var i = 0; i < count; i++)
             {
-                var idx = UnityEngine.Random.Range(0, pool.Count);
+                var idx = TakeWeightedIndex(weights);
                 chosen.Add(pool[idx]);
                 pool.RemoveAt(idx);
+                weights.RemoveAt(idx);
             }
 
             return chosen;
+        }
+
+        /// <summary>
+        ///     Note that an event fired, so it and its group are less likely for the next few draws.
+        /// </summary>
+        internal static void NoteTriggered(GameEvent ev)
+        {
+            if (ev != null)
+            {
+                GroupCooldowns[GroupKey(ev)] = GroupCooldownDraws;
+            }
+        }
+
+        /// <summary>Forget every cooldown — a new colony starts with a clean slate.</summary>
+        internal static void ResetGroupCooldowns() => GroupCooldowns.Clear();
+
+        /// <summary>An event with no group is damped on its own, so a lone event can't repeat either.</summary>
+        private static string GroupKey(GameEvent ev) =>
+            string.IsNullOrEmpty(ev.GroupId) ? "event:" + ev.Id : "group:" + ev.GroupId;
+
+        private static void TickGroupCooldowns()
+        {
+            if (GroupCooldowns.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var key in new List<string>(GroupCooldowns.Keys))
+            {
+                var left = GroupCooldowns[key] - 1;
+                if (left <= 0)
+                {
+                    GroupCooldowns.Remove(key);
+                }
+                else
+                {
+                    GroupCooldowns[key] = left;
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Weight after the group cooldown: halved per draw still on the clock, never to zero.
+        ///     Damped, not banned — a recent group is unlikely, not impossible.
+        /// </summary>
+        private static int EffectiveWeight(GameEvent ev)
+        {
+            var weight = ev.Weight;
+            if (weight <= 0)
+            {
+                return 0; // EventWeight.Never: registered, but never drawn.
+            }
+
+            if (GroupCooldowns.TryGetValue(GroupKey(ev), out var draws) && draws > 0)
+            {
+                weight >>= System.Math.Min(draws, 8);
+            }
+
+            return System.Math.Max(1, weight);
+        }
+
+        private static bool CanRunSafely(GameEvent ev, object context)
+        {
+            try
+            {
+                return ev.CanRun(context);
+            }
+            catch (System.Exception e)
+            {
+                Log.Warn($"Condition of event '{ev.Id}' threw, skipping it: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>What a condition gets to look at when the options are drawn.</summary>
+        private static Dictionary<string, object> BuildDrawContext()
+        {
+            var cycle = -1;
+            try
+            {
+                var clock = GameClock.Instance;
+                if (clock != null) cycle = clock.GetCycle();
+            }
+            catch
+            {
+                // No clock yet (drawing before a colony is up): conditions just see -1.
+            }
+
+            return new Dictionary<string, object> { { EventContext.Cycle, cycle } };
+        }
+
+        /// <summary>Index into <paramref name="weights"/>, chance proportional to each weight.</summary>
+        private static int TakeWeightedIndex(List<int> weights)
+        {
+            var total = 0;
+            foreach (var w in weights)
+            {
+                total += w;
+            }
+
+            if (total <= 0)
+            {
+                return UnityEngine.Random.Range(0, weights.Count);
+            }
+
+            var roll = UnityEngine.Random.Range(0, total);
+            for (var i = 0; i < weights.Count; i++)
+            {
+                roll -= weights[i];
+                if (roll < 0)
+                {
+                    return i;
+                }
+            }
+
+            return weights.Count - 1; // Unreachable unless the weights changed under us.
         }
 
         public static GameEvent ById(string id)

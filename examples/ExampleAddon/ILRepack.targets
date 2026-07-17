@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+
+  <!-- Merge TwitchColony.Api.dll into this add-on's DLL, which is how add-ons are meant to ship it
+       (a loose copy would be fought over by every mod that shipped a different version).
+       This file also exists to disable the ILRepack package's own default target, which merges
+       everything in the output folder without a LibraryPath and fails to resolve the game DLLs. -->
+  <Target Name="MergeTwitchColonyApi" AfterTargets="Build" Condition="Exists('$(ApiFolder)/TwitchColony.Api.dll')">
+    <ItemGroup>
+      <MergeInputs Include="$(TargetPath)" />
+      <MergeInputs Include="$(ApiFolder)/TwitchColony.Api.dll" />
+    </ItemGroup>
+
+    <ILRepack
+      Parallel="true"
+      Internalize="true"
+      DebugInfo="false"
+      InputAssemblies="@(MergeInputs)"
+      TargetKind="SameAsPrimaryAssembly"
+      LibraryPath="$(LibFolder)"
+      OutputFile="$(TargetPath)" />
+  </Target>
+
+</Project>
