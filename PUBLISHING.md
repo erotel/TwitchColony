@@ -98,6 +98,35 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
+**Change notes for the 1.4.3 update.** The Workshop is still on 1.3.0, so this covers everything
+since — use this one and ignore the older blocks below.
+
+```
+[b]Settings are in the game now[/b] — Mods → the gear icon next to Twitch Colony. Channel, bubbles, voting, adoption and subs, all on one screen. Your old config.json is imported automatically; editing files still works if you prefer.
+
+[b]You control how dangerous chat can get[/b] — every event is tagged from harmless to deadly, and you set the ceiling chat can never cross. It can also ramp up with cycles, so the first cycles stay safe while you get set up. On by default; turn it off for the old free-for-all.
+
+[b]Drag the vote panel wherever you like[/b] — top centre is a bad guess when you have a camera and an overlay to work around. It remembers where you put it. The whole UI also follows the game's UI scale setting now, which it embarrassingly didn't before: at 4K it was a postage stamp.
+
+[b]Your OAuth token moved[/b] to its own file (mods/config/TwitchColony/token.txt) and is deliberately not on the settings screen — a token shown on stream is a password shown on stream. An existing token is moved for you.
+
+[b]Fixes[/b]
+[list]
+[*]The mod applied its Harmony patches twice — this caused the duplicate chat connection and the doubled pause-menu button.
+[*]Emoji drew as hollow boxes. The game's fonts have none, so anything unrenderable is now dropped from bubbles and banners instead.
+[*]Starting a second colony without restarting the game left voting dead and the vote button greyed out.
+[*]A vote left running when you returned to the main menu used to finish there and fire its event into nothing. The countdown also pauses with the pause menu now (but still not with game speed — chat votes in real time).
+[*]"Instant build" produced buildings at zero kelvin.
+[*]The vote button greys out the moment you click it.
+[*]A viewer who already has a duplicant can no longer adopt a critter as well.
+[*]A config.json with a typo in it no longer costs you your settings.
+[/list]
+
+[b]Mods can add their own events now[/b] — there's a proper modding API, and add-ons using it don't force players to install this mod. See MODDING.md on GitHub.
+
+Thanks to Sgt_Imalas, who found a great deal of this while hooking his own event mod up to the API.
+```
+
 **Change notes for the 1.4.2 update** (use this one if 1.4.1 never went up — it covers both):
 
 ```
