@@ -19,7 +19,7 @@
 
   <PropertyGroup>
     <LibFolder>$(MSBuildProjectDirectory)/../../lib</LibFolder>
-    <ApiFolder>$(MSBuildProjectDirectory)/../../Api/bin/Release</ApiFolder>
+    <ApiFolder>$(MSBuildProjectDirectory)/../../Api/bin/Release/net48</ApiFolder>
   </PropertyGroup>
 
   <ItemGroup>

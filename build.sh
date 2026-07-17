@@ -24,14 +24,17 @@ if [ ! -f "$DLL" ]; then
   exit 1
 fi
 
-echo ">> Building the modding API (Release)…"
+# Built for net48 and netstandard2.1: add-on authors use both, and a netstandard2.1 project can't
+# cleanly reference a net48 library.
+echo ">> Building the modding API (Release, net48 + netstandard2.1)…"
 dotnet build Api/TwitchColony.Api.csproj -c Release -v minimal
 
-API_DLL="Api/bin/Release/TwitchColony.Api.dll"
-if [ ! -f "$API_DLL" ]; then
-  echo "ERROR: build did not produce $API_DLL" >&2
-  exit 1
-fi
+for tfm in net48 netstandard2.1; do
+  if [ ! -f "Api/bin/Release/$tfm/TwitchColony.Api.dll" ]; then
+    echo "ERROR: build did not produce Api/bin/Release/$tfm/TwitchColony.Api.dll" >&2
+    exit 1
+  fi
+done
 
 # Built after the API, since it merges it in — and it's how we test that the API actually works
 # from a separate mod, which is the only way to test it short of writing one.
@@ -46,8 +49,11 @@ rm -rf dist
 mkdir -p "$OUT" "$API_OUT" "$EXAMPLE_OUT"
 cp "$DLL" "$OUT/"
 cp mod_info.yaml mod.yaml "$OUT/"
-cp "$API_DLL" "$API_OUT/"
-[ -f "Api/bin/Release/TwitchColony.Api.xml" ] && cp Api/bin/Release/TwitchColony.Api.xml "$API_OUT/"
+for tfm in net48 netstandard2.1; do
+  mkdir -p "$API_OUT/$tfm"
+  cp "Api/bin/Release/$tfm/TwitchColony.Api.dll" "$API_OUT/$tfm/"
+  [ -f "Api/bin/Release/$tfm/TwitchColony.Api.xml" ] && cp "Api/bin/Release/$tfm/TwitchColony.Api.xml" "$API_OUT/$tfm/"
+done
 cp examples/ExampleAddon/bin/Release/TwitchColonyExampleAddon.dll "$EXAMPLE_OUT/"
 cp examples/ExampleAddon/mod_info.yaml examples/ExampleAddon/mod.yaml "$EXAMPLE_OUT/"
 
@@ -57,5 +63,5 @@ echo "Mod folder: $OUT"
 echo "  Copy its CONTENTS into:"
 echo "    …/Documents/Klei/OxygenNotIncluded/mods/Local/TwitchColony/"
 echo "  (mod_info.yaml must sit directly in that folder.)"
-echo "Modding API: $API_OUT/TwitchColony.Api.dll  (for add-on authors — see MODDING.md)"
+echo "Modding API: $API_OUT/{net48,netstandard2.1}/TwitchColony.Api.dll  (for add-on authors — see MODDING.md)"
 echo "Example add-on: $EXAMPLE_OUT/  (optional; install like the mod, into mods/Local/)"

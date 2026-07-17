@@ -19,12 +19,22 @@ carries on as if nothing happened — no crash, no missing assembly, nothing to 
 ## Quick start
 
 1. Grab **`TwitchColony.Api.dll`** from the [releases](https://github.com/erotel/TwitchColony/releases)
-   (or build it yourself: `./build.sh` → `dist/api/`).
+   (or build it yourself: `./build.sh` → `dist/api/`). It ships for **both** targets — take the one
+   matching your mod:
+
+   ```
+   net48/TwitchColony.Api.dll            <- classic ONI mod projects
+   netstandard2.1/TwitchColony.Api.dll   <- newer mod solutions
+   ```
+
+   Mixing them isn't a hard error — a `<Reference>` to the net48 build resolves fine from a
+   netstandard2.1 project — but you end up with `mscorlib` dragged in alongside `netstandard` in
+   your merged assembly. Take the matching one and it stays clean.
 2. Reference it from your mod project **and ILMerge/ILRepack it into your own DLL**:
 
    ```xml
    <Reference Include="TwitchColony.Api">
-     <HintPath>libs\TwitchColony.Api.dll</HintPath>
+     <HintPath>libs\netstandard2.1\TwitchColony.Api.dll</HintPath>
      <Private>false</Private>
    </Reference>
    ```

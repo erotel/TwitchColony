@@ -2,13 +2,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <!-- Built for both, because add-on authors are split between them: net48 is the classic ONI mod
+         target, netstandard2.1 is what newer mod solutions use, and a netstandard2.1 project can't
+         cleanly reference a net48 library. PLib ships both for the same reason. The game runs either
+         (its Managed folder carries mscorlib and netstandard). -->
+    <TargetFrameworks>net48;netstandard2.1</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <OutputType>Library</OutputType>
     <AssemblyName>TwitchColony.Api</AssemblyName>
     <RootNamespace>TwitchColony.Api</RootNamespace>
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <Deterministic>true</Deterministic>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Shipped to other mod authors, who ILMerge it into their own DLL. -->
@@ -25,7 +28,9 @@
     <Compile Include="$(MSBuildProjectDirectory)/../Shared/**/*.cs" LinkBase="Shared" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!-- net48 reference assemblies, needed to build that flavour on Linux. Not for netstandard2.1,
+       which the SDK already knows how to build. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
 
