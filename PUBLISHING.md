@@ -98,9 +98,20 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
-**Change notes for the 1.4.7 update.** The Workshop is still on 1.3.0, so this covers everything
-since — use this one and ignore the older blocks below. (1.4.7 itself is a modding-API addition with
-no player-facing change; the note is folded into the "Mods can add their own events" line below.)
+**Change notes for the 1.4.7 update** — the current one, use this. The Workshop is on 1.4.6, so this
+covers only what 1.4.7 adds: a modding-API addition with no player-facing change. Paste it into the
+uploader's change-notes field; the main store description above doesn't need touching.
+
+```
+[b]A modding-API update — nothing changes if you're just here to play.[/b]
+
+Add-on mods can now build an event that picks another event: it reads the other events' weight and whether they're allowed to run right now, rolls its own weighted choice, and fires the winner. That's what drives the "random weather" event in Sgt_Imalas's Chaos Events, for one.
+
+So if you use a mod that adds its own events (like Chaos Events), update both and you're set. No new settings, and the mod plays exactly the same on its own.
+```
+
+**Change notes for the 1.3.0 → 1.4.6 jump** (already published — kept for reference, and reuse the
+relevant parts if the Workshop ever falls several versions behind again):
 
 ```
 [b]Settings are in the game now[/b] — Mods → the gear icon next to Twitch Colony. Channel, bubbles, voting, adoption and subs, all on one screen. Your old config.json is imported automatically; editing files still works if you prefer.
