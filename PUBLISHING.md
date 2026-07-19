@@ -98,9 +98,18 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
-**Change notes for the 1.4.7 update** — the current one, use this. The Workshop is on 1.4.6, so this
-covers only what 1.4.7 adds: a modding-API addition with no player-facing change. Paste it into the
-uploader's change-notes field; the main store description above doesn't need touching.
+**Change notes for the 1.4.8 update** — the current one, use this. The Workshop is on 1.4.7, so this
+covers only what 1.4.8 adds: a small tweak to the event-list window. Paste it into the uploader's
+change-notes field; the main store description above doesn't need touching.
+
+```
+[b]A small tidy-up.[/b]
+
+The event list window (the one that shows every event, its danger and whether chat could vote it right now) is now sorted by how dangerous each event is — harmless at the top, deadly at the bottom — instead of alphabetically. Events from other mods slot in by their own danger tag. Nothing else changes; no new settings.
+```
+
+**Change notes for the 1.4.7 update** (already published) — a modding-API addition with no
+player-facing change:
 
 ```
 [b]A modding-API update — nothing changes if you're just here to play.[/b]
