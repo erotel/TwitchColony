@@ -26,7 +26,18 @@ namespace TwitchColony.UI
         public static void Show()
         {
             var events = new List<GameEvent>(EventRegistry.AllEvents);
-            events.Sort((a, b) => string.Compare(a.Id, b.Id, System.StringComparison.OrdinalIgnoreCase));
+            // Harmless first, deadly last; alphabetical by id within the same danger tier. Flip the
+            // CompareTo operands (a vs b) to list most-dangerous-first instead.
+            events.Sort((a, b) =>
+            {
+                var byDanger = a.Danger.CompareTo(b.Danger);
+                if (byDanger != 0)
+                {
+                    return byDanger;
+                }
+
+                return string.Compare(a.Id, b.Id, System.StringComparison.OrdinalIgnoreCase);
+            });
 
             var dialog = new PDialog("TwitchColonyEventBrowser")
             {
