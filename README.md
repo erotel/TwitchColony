@@ -14,6 +14,11 @@ Voting runs as a state machine: a **"Start Twitch Votes"** button in the in-game
 kicks off the first round; after that each round auto-restarts after `VoteDelay` seconds
 (the countdown freezes while the game is paused).
 
+The live vote can be shown two ways, each with its own toggle: the draggable **in-game panel**
+(on by default) and **`votes.txt`** next to `config.json` (off by default) — point an OBS Text
+source with *Read from file* at it to render the vote in the stream overlay instead, styled and
+placed however you like and visible across scene switches.
+
 ---
 
 ## Events

@@ -154,6 +154,7 @@ namespace TwitchColony.Voting
             cycleGateLogged = false;
             CyclesUntilStart = 0;
             ChatSay = null;
+            VotesFile.Clear();
         }
 
         /// <summary>
@@ -245,6 +246,10 @@ namespace TwitchColony.Voting
 
             // Auto-adoption runs independently of voting — it should tick even in "bubbles only" mode.
             CritterAdoption.Tick();
+
+            // Keep votes.txt in step with the vote (before the EnableEvents early-return below, so
+            // flipping events off mid-vote still blanks the overlay).
+            VotesFile.Tick(this);
 
             // "Bubbles only" mode (events disabled): park the machine back to idle.
             if (!cfg.EnableEvents)

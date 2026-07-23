@@ -197,7 +197,11 @@ namespace TwitchColony.UI
             }
             else
             {
-                content = vc != null && ModConfig.Instance.EnableEvents ? BuildContent(vc) : null;
+                // ShowVoteHud only hides the vote display itself — flash banners above still show,
+                // they carry things the overlay can't (sub celebrations, "click to look" pans).
+                content = vc != null && ModConfig.Instance.EnableEvents && ModConfig.Instance.ShowVoteHud
+                    ? BuildContent(vc)
+                    : null;
             }
 
             var show = content != null;

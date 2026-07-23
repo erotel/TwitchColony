@@ -178,6 +178,16 @@ namespace TwitchColony.Config
             "token with chat:edit.", CAT_VOTING)]
         public bool AnnounceInChat { get; set; } = true;
 
+        [Option("Show the in-game vote panel", "The floating panel with the options, live tally and " +
+            "countdown. Turn it off if your stream overlay shows the vote from votes.txt instead. " +
+            "Event and sub banners still appear.", CAT_VOTING)]
+        public bool ShowVoteHud { get; set; } = true;
+
+        [Option("Write votes.txt for OBS", "Keep the current vote written to votes.txt next to " +
+            "config.json. Point an OBS Text source with 'Read from file' at it and the vote shows in " +
+            "your overlay — styled and placed however you like, visible on any scene.", CAT_VOTING)]
+        public bool WriteVotesFile { get; set; } = false;
+
         [Option("Surprise box camera", "The surprise-box event pans and zooms the camera to the box.",
             CAT_VOTING)]
         public bool SurpriseBoxZoom { get; set; } = true;
