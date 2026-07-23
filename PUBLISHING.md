@@ -77,6 +77,7 @@ re-publish. Same Workshop item, new build.
 [*][b]73 events[/b] — stress spikes and group therapy, instant builds/digs/research, floods and element dumps, raining critters, turbo/sleepy dupes, care packages, blackouts, heat waves… up to lava, if you allow it.
 [*][b]Critter adoption[/b] — a viewer types !adopt and a critter is named after them (nearest the printing pod first), with their nick on a tag under it. The mod can also name critters after chat on its own. Their chat then bubbles above their critter.
 [*][b]Sub celebrations[/b] — a NEW SUB banner, a party popper over the duplicants, and the whole colony stops to cheer.
+[*][b]OBS overlay support[/b] — the live vote (options, tallies, countdown, winner) can be written to a votes.txt file for an OBS "read from file" Text source, so the vote sits in your stream overlay styled your way. The in-game vote panel and the file each have their own switch — run either, or both.
 [/list]
 
 [b]You decide how mean chat can be[/b]
@@ -98,9 +99,19 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
-**Change notes for the 1.4.8 update** — the current one, use this. The Workshop is on 1.4.7, so this
-covers only what 1.4.8 adds: a small tweak to the event-list window. Paste it into the uploader's
-change-notes field; the main store description above doesn't need touching.
+**Change notes for the 1.4.9 update** — the current one, use this. The Workshop is on 1.4.8, so this
+covers only what 1.4.9 adds: the votes.txt overlay file and the vote-panel switch. Paste it into the
+uploader's change-notes field, and refresh the store description above (it gained the OBS bullet).
+
+```
+[b]Show the vote your way.[/b]
+
+The mod can now keep the current vote written to a plain text file — votes.txt, next to config.json. Point an OBS Text source with "read from file" at it and the vote lives in your stream overlay: any font, any size, any spot, visible on every scene. Live tallies, the countdown and the winner included.
+
+Both vote displays now have their own switch in the settings: the in-game panel (on, as before) and votes.txt (off until you want it). Run either, or both.
+```
+
+**Change notes for the 1.4.8 update** (already published):
 
 ```
 [b]A small tidy-up.[/b]
