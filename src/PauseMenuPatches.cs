@@ -16,9 +16,13 @@ namespace TwitchColony
     /// </summary>
     internal static class PauseMenuPatches
     {
+        // The button label depends on the mode: a vote in normal mode, a direct auto-fire in solo mode.
+        private const string VoteButtonLabel = "Start Twitch Votes";
+        private const string SoloButtonLabel = "Start Solo Chaos";
+
         // global::Action is the game's key-binding enum (it shadows System.Action). NumActions = "no key".
         private static readonly KButtonMenu.ButtonInfo TwitchButtonInfo = new KButtonMenu.ButtonInfo(
-            "Start Twitch Votes",
+            VoteButtonLabel,
             global::Action.NumActions,
             OnTwitchButtonPressed
         );
@@ -104,6 +108,15 @@ namespace TwitchColony
                 {
                     var idx = System.Math.Min(4, buttons.Count); // sit near the top, but never past the end
                     buttons.Insert(idx, TwitchButtonInfo);
+                    changed = true;
+                }
+
+                // Label the button for the current mode: solo mode fires an event directly, no vote. The
+                // menu is rebuilt on each open, so flipping the setting relabels it the next time it shows.
+                var wantText = ModConfig.Instance.AutoFireEvents ? SoloButtonLabel : VoteButtonLabel;
+                if (TwitchButtonInfo.text != wantText)
+                {
+                    TwitchButtonInfo.text = wantText;
                     changed = true;
                 }
 

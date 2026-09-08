@@ -43,6 +43,9 @@ namespace TwitchColony.Api
         /// <summary>Value of <see cref="Source"/> when something fired the event directly, no vote involved.</summary>
         public const string SourceDirect = "direct";
 
+        /// <summary>Value of <see cref="Source"/> when solo mode auto-fired a random event (no Twitch, no vote).</summary>
+        public const string SourceAuto = "auto";
+
         /// <summary>Reads a string key, or <paramref name="fallback"/> if it's missing or another type.</summary>
         public static string GetString(object context, string key, string fallback = "")
         {

@@ -133,6 +133,13 @@ namespace TwitchColony.Config
         [Option("Enable events & voting", "Master switch for the whole event/voting system.", CAT_VOTING)]
         public bool EnableEvents { get; set; } = true;
 
+        [Option("Solo mode (auto-fire events)", "Play off-stream with the same chaos: instead of a vote, " +
+            "ONE random event fires automatically each round — same weights, danger cap and cycle ramp as " +
+            "voting. Needs no Twitch connection (leave the channel empty). 'Delay between votes' sets how " +
+            "often events happen; 'Start after cycles' (or the pause-menu button) starts the first one.",
+            CAT_VOTING)]
+        public bool AutoFireEvents { get; set; } = false;
+
         [Option("Start after cycles", "Wait this many cycles after loading a colony before the FIRST " +
             "vote starts automatically, so you have time to get set up. 0 = don't start on its own " +
             "(use the pause-menu button).", CAT_VOTING)]

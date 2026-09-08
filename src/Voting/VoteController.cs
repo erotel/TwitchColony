@@ -175,6 +175,13 @@ namespace TwitchColony.Voting
                 return false;
             }
 
+            // Solo / auto-fire mode: no vote at all — fire one random allowed event and go straight
+            // to the delay before the next. Same cadence and settings as voting, no Twitch needed.
+            if (cfg.AutoFireEvents)
+            {
+                return FireAutoEvent(cfg);
+            }
+
             options = EventRegistry.PickForVote(Mathf.Clamp(cfg.OptionsPerVote, 2, 5));
             if (options.Count < 2)
             {
@@ -202,6 +209,36 @@ namespace TwitchColony.Voting
                 StartTwitchPoll(cfg);
             }
 
+            return true;
+        }
+
+        /// <summary>
+        ///     Solo mode: pick one random allowed event and fire it now, then drop into the between-votes
+        ///     delay so the next one auto-starts on the same cadence. No options, no chat, no poll —
+        ///     everything is decided by the same weighted draw a vote would use. Returns false if nothing
+        ///     was eligible this round, so the caller re-arms the delay and tries again (never parks in Error).
+        /// </summary>
+        private bool FireAutoEvent(ModConfig cfg)
+        {
+            var ev = EventRegistry.PickRandomForAuto();
+            if (ev == null)
+            {
+                Log.Warn("Auto-fire: no eligible event this round; will try again after the delay.");
+                return false;
+            }
+
+            options = new List<GameEvent>(); // no vote options in solo mode (blanks the HUD / votes.txt)
+            chatVotes.Clear();
+            pollId = null;
+            VoteTimeRemaining = 0f;
+
+            Log.Info($"Auto-fired event: {ev.DisplayName}");
+            AnnounceWinner(ev); // shows the event banner (and posts to chat only if a channel is connected)
+            TriggerSafely(ev, BuildContext(ev, EventContext.SourceAuto, 0, null));
+
+            // Straight into the cooldown; Update() fires the next event once it elapses.
+            VoteDelayRemaining = cfg.VoteDelay;
+            State = VotingState.VoteDelay;
             return true;
         }
 

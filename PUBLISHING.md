@@ -99,9 +99,18 @@ Your mod can add its own events to the vote pool, and it doesn't have to depend 
 Source, docs & issues: https://github.com/erotel/TwitchColony
 ```
 
-**Change notes for the 1.4.9 update** — the current one, use this. The Workshop is on 1.4.8, so this
-covers only what 1.4.9 adds: the votes.txt overlay file and the vote-panel switch. Paste it into the
-uploader's change-notes field, and refresh the store description above (it gained the OBS bullet).
+**Change notes for the 1.4.10 update** — the current one. The Workshop is still on 1.4.8, so the next
+upload is a batch: paste BOTH this block and the 1.4.9 block below into the change-notes field (and
+refresh the store description — 1.4.9 added the OBS bullet).
+
+```
+[b]Play the chaos solo, off-stream.[/b]
+
+New "Solo mode" in the settings: instead of a vote, one random event fires on its own every round — the same events, weights and danger limits as the polls, and no Twitch connection needed. Leave the channel empty and enjoy the chaos in your single-player save. "Delay between votes" sets how often events happen; "Start after cycles" (or the pause-menu button) starts the first one.
+```
+
+**Change notes for the 1.4.9 update** — part of the same pending batch (Workshop is on 1.4.8): the
+votes.txt overlay file and the vote-panel switch.
 
 ```
 [b]Show the vote your way.[/b]

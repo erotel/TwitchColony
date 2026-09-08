@@ -240,6 +240,18 @@ namespace TwitchColony.Events
         }
 
         /// <summary>
+        ///     One random allowed event for solo / auto-fire mode. Same danger cap, conditions and
+        ///     weights as a vote draw, but ONE event instead of a set. Ticks the group cooldown first
+        ///     (exactly like <see cref="PickForVote"/> does) so recently-fired groups stay damped and
+        ///     events don't repeat back-to-back over a long solo game.
+        /// </summary>
+        internal static GameEvent PickRandomForAuto()
+        {
+            TickGroupCooldowns();
+            return PickRandomAllowed(null);
+        }
+
+        /// <summary>
         ///     Pick one random event that is allowed right now — same danger cap, conditions and
         ///     weights as a vote draw. Used by the Surprise event, which would otherwise be a hole
         ///     straight through the danger cap: it fires an event of its own choosing.
